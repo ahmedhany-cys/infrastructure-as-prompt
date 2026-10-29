@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and replace the placeholders. Never commit real
+# values for production accounts, and never put AWS access keys here — use an
+# AWS CLI profile, SSO, or an assumed role instead.
+aws_region     = "{{ p.region }}"
+aws_account_id = "123456789012" # placeholder
+{% if p.https %}
+acm_certificate_arn = "arn:aws:acm:{{ p.region }}:123456789012:certificate/00000000-0000-0000-0000-000000000000" # placeholder
+{% endif %}

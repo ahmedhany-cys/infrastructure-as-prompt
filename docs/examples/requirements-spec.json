@@ -1,0 +1,642 @@
+{
+  "schema_version": "1.0",
+  "revision": 1,
+  "generated_at": "2026-10-29T06:23:10.242663Z",
+  "facts": {
+    "environment": "production",
+    "deployment_type": "new",
+    "needs_database": true,
+    "traffic": "moderate",
+    "data_sensitivity": "personal",
+    "compliance": "none",
+    "data_residency": "none",
+    "region": "us-east-1",
+    "availability": "tolerate_minutes",
+    "tls": "acm",
+    "admin_access": "ssm",
+    "admin_cidr": null,
+    "audit_logging": true,
+    "budget": 400.0,
+    "industry": "saas",
+    "user_geography": "north_america",
+    "app_runtime": "node",
+    "traffic_pattern": "steady",
+    "off_hours_shutdown": false,
+    "db_size": "small",
+    "file_uploads": true,
+    "ops_team": "some",
+    "alerting": true,
+    "alert_email": "ops@example.com",
+    "backup_days": 7,
+    "log_retention_days": 90,
+    "app_port": 3000,
+    "memory_heavy": false,
+    "db_storage_gb": 20,
+    "scale_out_cpu": 60,
+    "schedule_timezone": "America/New_York",
+    "min_app_instances": 2,
+    "require_private_app": false,
+    "require_waf": false,
+    "allowed_regions": []
+  },
+  "requirements": [
+    {
+      "id": "REQ-SEC-001",
+      "title": "Database is not reachable from the internet",
+      "description": "The database has no public endpoint, lives in subnets without an internet route, and accepts connections only from the application tier.",
+      "category": "security",
+      "priority": "must",
+      "severity": "critical",
+      "origin": "confirmed",
+      "source": "Interview: data_sensitivity = Customers' personal data; needs_database = Yes, PostgreSQL",
+      "rationale": "A publicly reachable database is the most common cause of customer data exposure.",
+      "decisions": [
+        "DEC-NET-TIERS",
+        "DEC-DB-PLACEMENT"
+      ],
+      "resources": [
+        "aws_db_instance.main",
+        "aws_db_subnet_group.main",
+        "aws_security_group.db",
+        "aws_vpc_security_group_ingress_rule.db_from_app"
+      ],
+      "policies": [
+        "POL-RDS-001",
+        "POL-NET-001",
+        "POL-SG-002"
+      ],
+      "verification_method": "Plan-based policies; live check of PubliclyAccessible and security group rules after a real deployment.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-002",
+      "title": "Data encrypted at rest",
+      "description": "Database storage, server volumes and log storage are encrypted.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: data_sensitivity = Customers' personal data",
+      "rationale": "Protects data in snapshots, backups and decommissioned disks.",
+      "decisions": [
+        "DEC-ENCRYPTION"
+      ],
+      "resources": [
+        "aws_db_instance.main",
+        "aws_launch_template.app",
+        "aws_s3_bucket_server_side_encryption_configuration.logs"
+      ],
+      "policies": [
+        "POL-RDS-002",
+        "POL-EC2-003",
+        "POL-S3-002"
+      ],
+      "verification_method": "Plan-based policies on storage_encrypted, EBS and S3 encryption settings.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-003",
+      "title": "Data encrypted in transit",
+      "description": "Users connect over HTTPS (TLS 1.2+); HTTP redirects to HTTPS; database connections require TLS.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: tls = Yes, HTTPS with an ACM certificate",
+      "rationale": "Prevents interception of credentials and customer data.",
+      "decisions": [
+        "DEC-TLS"
+      ],
+      "resources": [
+        "aws_lb_listener.https",
+        "aws_lb_listener.http_redirect",
+        "aws_db_parameter_group.main"
+      ],
+      "policies": [
+        "POL-ALB-001",
+        "POL-ALB-002",
+        "POL-RDS-006"
+      ],
+      "verification_method": "Plan-based listener and parameter-group policies.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-004",
+      "title": "No administrative or database ports exposed to the internet",
+      "description": "No security group allows SSH, RDP, database or all-port access from 0.0.0.0/0 or ::/0. Administration uses AWS Systems Manager Session Manager.",
+      "category": "security",
+      "priority": "must",
+      "severity": "critical",
+      "origin": "confirmed",
+      "source": "Interview: admin_access = AWS Systems Manager Session Manager (no open ports)",
+      "rationale": "Internet-exposed administrative interfaces are continuously scanned and brute-forced.",
+      "decisions": [
+        "DEC-ADMIN-ACCESS"
+      ],
+      "resources": [
+        "aws_security_group.alb",
+        "aws_security_group.app",
+        "aws_default_security_group.default"
+      ],
+      "policies": [
+        "POL-SG-001",
+        "POL-SG-004"
+      ],
+      "verification_method": "Plan-based analysis of every ingress rule.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-NET-001",
+      "title": "Application servers reachable only through the load balancer",
+      "description": "Application security group accepts traffic only from the load balancer security group.",
+      "category": "networking",
+      "priority": "must",
+      "severity": "critical",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Keeps servers off the internet even if they have public IPs for outbound traffic.",
+      "decisions": [
+        "DEC-NET-TIERS"
+      ],
+      "resources": [
+        "aws_security_group.app",
+        "aws_vpc_security_group_ingress_rule.app_from_alb"
+      ],
+      "policies": [
+        "POL-SG-003"
+      ],
+      "verification_method": "Plan-based security group reference analysis.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-005",
+      "title": "Least-privilege access for workloads",
+      "description": "Application servers use a role with only the permissions they need; no administrator policies, wildcard grants or IAM users with access keys.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Limits the blast radius of a compromised server.",
+      "decisions": [
+        "DEC-IAM"
+      ],
+      "resources": [
+        "aws_iam_role.app",
+        "aws_iam_role_policy.app_read_db_secret",
+        "aws_iam_role_policy_attachment.app_ssm"
+      ],
+      "policies": [
+        "POL-IAM-001",
+        "POL-IAM-002",
+        "POL-IAM-003"
+      ],
+      "verification_method": "Plan-based IAM policy document analysis.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-006",
+      "title": "Secrets are never stored in configuration",
+      "description": "Database credentials are generated and held by AWS Secrets Manager; no credentials appear in Terraform, user data or tags.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Terraform state and plan files are widely readable and long-lived.",
+      "decisions": [
+        "DEC-SECRETS"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "policies": [
+        "POL-RDS-005",
+        "POL-SEC-002"
+      ],
+      "verification_method": "Plan-based attribute policy plus supplementary credential pattern scan.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-007",
+      "title": "Server metadata service hardened",
+      "description": "Instances require IMDSv2 session tokens.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Mitigates SSRF-based theft of instance credentials.",
+      "decisions": [
+        "DEC-IAM"
+      ],
+      "resources": [
+        "aws_launch_template.app"
+      ],
+      "policies": [
+        "POL-EC2-001"
+      ],
+      "verification_method": "Plan-based launch template policy.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-008",
+      "title": "Log storage is private and tamper-resistant",
+      "description": "The log bucket blocks all public access, is encrypted and versioned.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Logs often contain sensitive data and are evidence during incidents.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_s3_bucket.logs",
+        "aws_s3_bucket_public_access_block.logs",
+        "aws_s3_bucket_versioning.logs"
+      ],
+      "policies": [
+        "POL-S3-001",
+        "POL-S3-002",
+        "POL-S3-003"
+      ],
+      "verification_method": "Plan-based S3 policies.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-AUD-001",
+      "title": "Audit trail of infrastructure changes",
+      "description": "A multi-region CloudTrail trail with log file validation records every AWS API call.",
+      "category": "compliance",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: audit_logging = Yes, record an audit trail; compliance = None that I know of",
+      "rationale": "Answers who changed what, and when.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_cloudtrail.main"
+      ],
+      "policies": [
+        "POL-LOG-001"
+      ],
+      "verification_method": "Plan-based CloudTrail policy; live trail status after a real deployment.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-AUD-002",
+      "title": "Network and request logging",
+      "description": "VPC flow logs and load balancer access logs are delivered to the private log bucket.",
+      "category": "operational",
+      "priority": "should",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: audit_logging = Yes, record an audit trail; environment = Production",
+      "rationale": "Needed to investigate incidents and abuse.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_flow_log.vpc",
+        "aws_lb.app"
+      ],
+      "policies": [
+        "POL-LOG-002",
+        "POL-LOG-003"
+      ],
+      "verification_method": "Plan-based logging policies.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-AVL-001",
+      "title": "Application keeps running when a server fails",
+      "description": "An auto scaling group with load balancer health checks keeps at least 2 instance(s) running across two availability zones.",
+      "category": "availability",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: availability = Short outages (minutes to an hour) are acceptable; environment = Production",
+      "rationale": "Servers fail; replacement must be automatic.",
+      "decisions": [
+        "DEC-COMPUTE"
+      ],
+      "resources": [
+        "aws_autoscaling_group.app"
+      ],
+      "policies": [
+        "POL-AVL-001"
+      ],
+      "verification_method": "Plan-based ASG configuration policy.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-AVL-003",
+      "title": "Automated database backups retained \u2265 7 day(s)",
+      "description": "Point-in-time recovery is available for at least 7 day(s).",
+      "category": "availability",
+      "priority": "must",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: recovery_window = 7 days; compliance = None that I know of",
+      "rationale": "Recovers from data corruption and accidental deletion.",
+      "decisions": [
+        "DEC-DB-HA"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "policies": [
+        "POL-RDS-003"
+      ],
+      "verification_method": "Plan-based backup_retention_period policy.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-OPS-001",
+      "title": "Production data protected from accidental deletion",
+      "description": "Deletion protection is enabled and a final snapshot is taken if the database is ever deleted.",
+      "category": "operational",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: environment = Production",
+      "rationale": "A single mistaken command must not destroy customer data.",
+      "decisions": [
+        "DEC-DB-HA"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "policies": [
+        "POL-RDS-004"
+      ],
+      "verification_method": "Plan-based deletion settings policy.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-PRF-001",
+      "title": "Capacity scales with traffic",
+      "description": "Target-tracking auto scaling adds servers when average CPU exceeds 60%.",
+      "category": "performance",
+      "priority": "should",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: traffic = Moderate; traffic_pattern = Fairly steady, day and night",
+      "rationale": "The original request mentioned handling increasing traffic.",
+      "decisions": [
+        "DEC-COMPUTE"
+      ],
+      "resources": [
+        "aws_autoscaling_group.app",
+        "aws_autoscaling_policy.cpu_target"
+      ],
+      "policies": [
+        "POL-PRF-001"
+      ],
+      "verification_method": "Plan-based scaling policy check.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-CST-001",
+      "title": "Estimated monthly cost within $400",
+      "description": "The selected architecture's estimated monthly cost does not exceed the budget. Security controls are never removed to meet it.",
+      "category": "cost",
+      "priority": "must",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: budget = $400 / month",
+      "rationale": "Stated monthly budget.",
+      "decisions": [
+        "DEC-COST"
+      ],
+      "resources": [],
+      "policies": [],
+      "verification_method": "Cost model estimate (approximate; not a billing guarantee).",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-SEC-010",
+      "title": "Uploaded files are private and encrypted",
+      "description": "User files live in a dedicated S3 bucket that blocks all public access, is encrypted and versioned, rejects unencrypted connections, and is readable and writable only by the application's role.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: file_uploads = Yes, store files in a private S3 bucket; data_sensitivity = Customers' personal data",
+      "rationale": "Misconfigured file buckets are a leading cause of public data leaks.",
+      "decisions": [
+        "DEC-STORAGE"
+      ],
+      "resources": [
+        "aws_s3_bucket.uploads",
+        "aws_s3_bucket_public_access_block.uploads",
+        "aws_s3_bucket_server_side_encryption_configuration.uploads",
+        "aws_iam_role_policy.app_uploads"
+      ],
+      "policies": [
+        "POL-S3-001",
+        "POL-S3-002",
+        "POL-S3-003",
+        "POL-IAM-001"
+      ],
+      "verification_method": "Plan-based S3 and IAM policies; every bucket in the plan is checked.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-AUD-003",
+      "title": "Logs retained for at least 90 days",
+      "description": "Log bucket lifecycle rules and CloudWatch log groups keep logs for at least 90 days before deleting them.",
+      "category": "compliance",
+      "priority": "should",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: log_retention = 90 days; compliance = None that I know of",
+      "rationale": "Logs are the evidence trail for incident investigations and audits.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_s3_bucket_lifecycle_configuration.logs",
+        "aws_cloudwatch_log_group.postgresql"
+      ],
+      "policies": [
+        "POL-LOG-004"
+      ],
+      "verification_method": "Plan-based lifecycle expiration and log group retention policy.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-OPS-003",
+      "title": "Someone is alerted when the service is unhealthy",
+      "description": "CloudWatch alarms on load balancer errors and unhealthy servers and database CPU and free storage notify ops@example.com through an encrypted SNS topic.",
+      "category": "operational",
+      "priority": "must",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: ops_team = A developer with some AWS experience; alerting = Yes, send email alerts; alert_email = ops@example.com",
+      "rationale": "Problems should reach your team before they reach your customers.",
+      "decisions": [
+        "DEC-MONITORING"
+      ],
+      "resources": [
+        "aws_sns_topic.alerts",
+        "aws_sns_topic_subscription.email",
+        "aws_kms_key.alerts",
+        "aws_cloudwatch_metric_alarm.alb_5xx",
+        "aws_cloudwatch_metric_alarm.unhealthy_hosts",
+        "aws_cloudwatch_metric_alarm.db_cpu",
+        "aws_cloudwatch_metric_alarm.db_free_storage"
+      ],
+      "policies": [
+        "POL-OPS-001",
+        "POL-OPS-002"
+      ],
+      "verification_method": "Plan-based check that alarms watch the load balancer and notify a subscribed, encrypted topic.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    },
+    {
+      "id": "REQ-OPS-002",
+      "title": "Resources are tagged for ownership and cost tracking",
+      "description": "Every taggable resource carries Project, Environment and ManagedBy tags.",
+      "category": "operational",
+      "priority": "could",
+      "severity": "low",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Enables cost allocation and safe cleanup.",
+      "decisions": [
+        "DEC-TAGS"
+      ],
+      "resources": [
+        "provider.aws"
+      ],
+      "policies": [
+        "POL-TAG-001"
+      ],
+      "verification_method": "Plan-based tag policy.",
+      "status": "unverified",
+      "verification_level": "none",
+      "status_reason": "Not evaluated yet.",
+      "evidence": []
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "A-00",
+      "statement": "PostgreSQL 16 on Amazon RDS is the database engine.",
+      "reason": "You indicated a relational database; PostgreSQL is a widely supported default.",
+      "can_change_in": "Interview answer needs_database / Terraform"
+    },
+    {
+      "id": "A-01",
+      "statement": "Application servers run Amazon Linux 2023 on Graviton (arm64) instances and Node.js listens on port 3000 behind the load balancer.",
+      "reason": "Lowest-cost general-purpose option, with the usual default port for your runtime; a placeholder app is installed until you deploy your own.",
+      "can_change_in": "Architecture workspace / Terraform variables"
+    },
+    {
+      "id": "A-02",
+      "statement": "Two availability zones are used.",
+      "reason": "The minimum for a load balancer and a Multi-AZ-capable database.",
+      "can_change_in": "Terraform variable availability_zones"
+    },
+    {
+      "id": "A-03",
+      "statement": "AWS-managed encryption keys are used (not customer-managed KMS keys).",
+      "reason": "No extra cost or key administration; switch to customer-managed keys if your compliance program requires key control.",
+      "can_change_in": "Terraform"
+    },
+    {
+      "id": "A-04",
+      "statement": "Terraform state is stored locally for this MVP.",
+      "reason": "Avoids creating a state bucket; not suitable for teams or production.",
+      "can_change_in": "Generated README"
+    },
+    {
+      "id": "A-07",
+      "statement": "The database starts with 20 GB of storage and grows automatically up to 100 GB.",
+      "reason": "Sized from your first-year data estimate.",
+      "can_change_in": "Interview answer db_size / Terraform"
+    },
+    {
+      "id": "A-05",
+      "statement": "You will supply an issued ACM certificate ARN for your domain before a real deployment.",
+      "reason": "HTTPS requires a certificate; the simulation uses a placeholder ARN.",
+      "can_change_in": "terraform.tfvars"
+    }
+  ],
+  "unresolved": [
+    "ACM certificate ARN for the application's domain (required before a real deployment).",
+    "Confirm the SNS email subscription: AWS sends a confirmation link to ops@example.com after a real deployment."
+  ],
+  "conflicts": [],
+  "rejected": [
+    {
+      "question_id": "file_uploads",
+      "value": "no",
+      "reason": "User chose 'Yes, store files in a private S3 bucket' instead of the recommended 'No file storage needed'.",
+      "rejected_by": "user",
+      "at": "2026-10-29T06:23:10.153357Z"
+    }
+  ]
+}

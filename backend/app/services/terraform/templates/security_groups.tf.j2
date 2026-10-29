@@ -1,0 +1,110 @@
+# Security groups form a chain: internet -> load balancer -> application{{ " -> database" if db else "" }}.
+# Implements {{ req.app_via_lb }}{{ ", " + req.db_sg if db else "" }} and {{ req.no_admin_exposure }}.
+
+resource "aws_security_group" "alb" {
+  name        = "${local.name_prefix}-alb"
+  description = "Internet-facing load balancer"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${local.name_prefix}-alb"
+  }
+}
+{% if p.https %}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTPS from the internet"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+{% endif %}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  security_group_id = aws_security_group.alb.id
+  description       = "{{ 'HTTP from the internet (redirected to HTTPS)' if p.https else 'HTTP from the internet' }}"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "alb_to_app" {
+  security_group_id            = aws_security_group.alb.id
+  description                  = "Forward to application servers"
+  referenced_security_group_id = aws_security_group.app.id
+  from_port                    = {{ p.app_port }}
+  to_port                      = {{ p.app_port }}
+  ip_protocol                  = "tcp"
+}
+
+resource "aws_security_group" "app" {
+  name        = "${local.name_prefix}-app"
+  description = "Application servers"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${local.name_prefix}-app"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
+  security_group_id            = aws_security_group.app.id
+  description                  = "Application traffic from the load balancer only"
+  referenced_security_group_id = aws_security_group.alb.id
+  from_port                    = {{ p.app_port }}
+  to_port                      = {{ p.app_port }}
+  ip_protocol                  = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_https_out" {
+  security_group_id = aws_security_group.app.id
+  description       = "HTTPS to AWS APIs (SSM, Secrets Manager) and OS package repositories"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+{% if ssh %}
+
+resource "aws_vpc_security_group_ingress_rule" "app_ssh_admin" {
+  security_group_id = aws_security_group.app.id
+  description       = "SSH from the approved administrator network only"
+  cidr_ipv4         = var.admin_cidr
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
+}
+{% endif %}
+{% if db %}
+
+resource "aws_vpc_security_group_egress_rule" "app_to_db" {
+  security_group_id            = aws_security_group.app.id
+  description                  = "PostgreSQL to the database"
+  referenced_security_group_id = aws_security_group.db.id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+}
+
+resource "aws_security_group" "db" {
+  name        = "${local.name_prefix}-db"
+  description = "Database - reachable from the application tier only"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${local.name_prefix}-db"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
+  security_group_id            = aws_security_group.db.id
+  description                  = "PostgreSQL from application servers only"
+  referenced_security_group_id = aws_security_group.app.id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+}
+{% endif %}

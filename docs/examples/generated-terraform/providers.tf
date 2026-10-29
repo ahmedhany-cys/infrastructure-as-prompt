@@ -1,0 +1,24 @@
+provider "aws" {
+  region = var.aws_region
+
+  # Refuses to run against any account other than the one you intend.
+  allowed_account_ids = [var.aws_account_id]
+
+  default_tags {
+    tags = {
+      Project     = var.project_slug
+      Environment = var.environment
+      ManagedBy   = "infrastructure-as-prompt"
+      IaPProject  = "20c173875dc448dc834465e380410cde"
+    }
+  }
+}
+
+locals {
+  name_prefix        = "${var.project_slug}-${var.environment}"
+  logs_bucket        = "${var.project_slug}-${var.environment}-logs-${var.aws_account_id}"
+  logs_bucket_arn    = "arn:aws:s3:::${var.project_slug}-${var.environment}-logs-${var.aws_account_id}"
+  db_identifier      = "${var.project_slug}-${var.environment}-db"
+  uploads_bucket     = "${var.project_slug}-${var.environment}-uploads-${var.aws_account_id}"
+  uploads_bucket_arn = "arn:aws:s3:::${var.project_slug}-${var.environment}-uploads-${var.aws_account_id}"
+}

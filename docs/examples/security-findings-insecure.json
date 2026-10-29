@@ -1,0 +1,180 @@
+{
+  "status": "blocked",
+  "summary": {
+    "critical": 3,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "passed": 38,
+    "not_applicable": 5,
+    "external_advisories": 31,
+    "blocking": true,
+    "blocking_reason": "Deployment blocked by: POL-RDS-001 on aws_db_instance.main; POL-SG-001 on aws_vpc_security_group_ingress_rule.debug_ssh; POL-SG-003 on aws_vpc_security_group_ingress_rule.debug_ssh"
+  },
+  "failed_policies": [
+    {
+      "policy_id": "POL-RDS-001",
+      "title": "Database is not publicly accessible",
+      "severity": "critical",
+      "category": "network",
+      "outcome": "fail",
+      "resource": "aws_db_instance.main",
+      "attribute": "publicly_accessible",
+      "message": "Database is configured to receive a public IP address and be reachable from the internet.",
+      "expected": false,
+      "actual": true,
+      "remediation": "Set publicly_accessible = false and place the database in private subnets.",
+      "requirements": [
+        "REQ-SEC-001"
+      ]
+    },
+    {
+      "policy_id": "POL-SG-001",
+      "title": "No internet ingress to administrative or database ports",
+      "severity": "critical",
+      "category": "network",
+      "outcome": "fail",
+      "resource": "aws_vpc_security_group_ingress_rule.debug_ssh",
+      "attribute": "cidr",
+      "message": "Ingress from the internet (0.0.0.0/0) allowed to 22 (SSH).",
+      "expected": "no internet ingress to administrative or database ports",
+      "actual": [
+        "0.0.0.0/0"
+      ],
+      "remediation": "Remove the rule, use AWS Systems Manager Session Manager for administration, or restrict the source to a specific range.",
+      "requirements": [
+        "REQ-SEC-004"
+      ]
+    },
+    {
+      "policy_id": "POL-SG-003",
+      "title": "Application servers reachable only through the load balancer",
+      "severity": "critical",
+      "category": "network",
+      "outcome": "fail",
+      "resource": "aws_vpc_security_group_ingress_rule.debug_ssh",
+      "attribute": "source",
+      "message": "Application servers accept traffic from a source other than the load balancer.",
+      "expected": "load balancer security group only",
+      "actual": [
+        "0.0.0.0/0"
+      ],
+      "remediation": "Reference the load balancer security group as the only source.",
+      "requirements": [
+        "REQ-NET-001"
+      ]
+    }
+  ],
+  "external_advisories_sample": [
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_338",
+      "title": "Ensure CloudWatch log groups retains logs for at least 1 year",
+      "severity": "UNRATED",
+      "resource": "aws_cloudwatch_log_group.postgresql",
+      "file": "database.tf",
+      "line": 24,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_158",
+      "title": "Ensure that CloudWatch Log Group is encrypted by KMS",
+      "severity": "UNRATED",
+      "resource": "aws_cloudwatch_log_group.postgresql",
+      "file": "database.tf",
+      "line": 24,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_353",
+      "title": "Ensure that RDS instances have performance insights enabled",
+      "severity": "UNRATED",
+      "resource": "aws_db_instance.main",
+      "file": "database.tf",
+      "line": 29,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_17",
+      "title": "Ensure all data stored in RDS is not publicly accessible",
+      "severity": "UNRATED",
+      "resource": "aws_db_instance.main",
+      "file": "database.tf",
+      "line": 29,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_118",
+      "title": "Ensure that enhanced monitoring is enabled for Amazon RDS instances",
+      "severity": "UNRATED",
+      "resource": "aws_db_instance.main",
+      "file": "database.tf",
+      "line": 29,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_252",
+      "title": "Ensure CloudTrail defines an SNS Topic",
+      "severity": "UNRATED",
+      "resource": "aws_cloudtrail.main",
+      "file": "logging.tf",
+      "line": 137,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_35",
+      "title": "Ensure CloudTrail logs are encrypted at rest using KMS CMKs",
+      "severity": "UNRATED",
+      "resource": "aws_cloudtrail.main",
+      "file": "logging.tf",
+      "line": 137,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_260",
+      "title": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80",
+      "severity": "UNRATED",
+      "resource": "aws_vpc_security_group_ingress_rule.alb_http",
+      "file": "security_groups.tf",
+      "line": 23,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV_AWS_24",
+      "title": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 22",
+      "severity": "UNRATED",
+      "resource": "aws_vpc_security_group_ingress_rule.debug_ssh",
+      "file": "security_groups.tf",
+      "line": 98,
+      "guideline": null,
+      "advisory": true
+    },
+    {
+      "tool": "checkov",
+      "rule_id": "CKV2_AWS_62",
+      "title": "Ensure S3 buckets should have event notifications enabled",
+      "severity": "UNRATED",
+      "resource": "aws_s3_bucket.logs",
+      "file": "logging.tf",
+      "line": 16,
+      "guideline": null,
+      "advisory": true
+    }
+  ]
+}

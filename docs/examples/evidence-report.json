@@ -1,0 +1,4172 @@
+{
+  "report_version": "1.0",
+  "generated_at": "2026-10-29T06:27:04.433222+00:00",
+  "generator": "Infrastructure as Prompt",
+  "project": {
+    "id": "20c173875dc448dc834465e380410cde",
+    "name": "Customer Portal",
+    "description": "I need a secure web application for my customers. It should handle increasing traffic, protect customer information, and cost as little as possible.",
+    "status": "deployed_simulated",
+    "settings": {
+      "cloud_provider": "aws",
+      "deployment_mode": "simulation",
+      "policy_profile": "standard",
+      "acm_certificate_arn": null,
+      "owner_email": null
+    }
+  },
+  "deployment_mode": "simulation",
+  "simulated": true,
+  "lifecycle_stages": [
+    {
+      "id": "configuration_validated",
+      "label": "Configuration validated locally (terraform validate)",
+      "reached": true
+    },
+    {
+      "id": "policies_passed",
+      "label": "Deterministic policies pass on the Terraform plan",
+      "reached": true
+    },
+    {
+      "id": "plan_reviewed",
+      "label": "Plan reviewed and approved",
+      "reached": true
+    },
+    {
+      "id": "deployment_attempted",
+      "label": "Deployment attempted",
+      "reached": true
+    },
+    {
+      "id": "deployment_succeeded",
+      "label": "Deployment succeeded",
+      "reached": true
+    },
+    {
+      "id": "resources_inspected",
+      "label": "Resource configuration inspected in a live AWS account",
+      "reached": false
+    }
+  ],
+  "requirements_summary": {
+    "passing": 20
+  },
+  "requirements": [
+    {
+      "id": "REQ-SEC-001",
+      "title": "Database is not reachable from the internet",
+      "description": "The database has no public endpoint, lives in subnets without an internet route, and accepts connections only from the application tier.",
+      "category": "security",
+      "priority": "must",
+      "severity": "critical",
+      "origin": "confirmed",
+      "source": "Interview: data_sensitivity = Customers' personal data; needs_database = Yes, PostgreSQL",
+      "rationale": "A publicly reachable database is the most common cause of customer data exposure.",
+      "decisions": [
+        "DEC-NET-TIERS",
+        "DEC-DB-PLACEMENT"
+      ],
+      "resources": [
+        "aws_db_instance.main",
+        "aws_db_subnet_group.main",
+        "aws_security_group.db",
+        "aws_vpc_security_group_ingress_rule.db_from_app"
+      ],
+      "policies": [
+        "POL-RDS-001",
+        "POL-NET-001",
+        "POL-SG-002"
+      ],
+      "verification_method": "Plan-based policies; live check of PubliclyAccessible and security group rules after a real deployment.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-NET-001, POL-RDS-001, POL-SG-002). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-RDS-001",
+          "outcome": "pass",
+          "detail": "aws_db_instance.main: Database is not publicly accessible.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-NET-001",
+          "outcome": "pass",
+          "detail": "aws_db_subnet_group.main: Database subnets aws_subnet.data have no route to an internet gateway.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-SG-002",
+          "outcome": "pass",
+          "detail": "aws_vpc_security_group_ingress_rule.db_from_app: Database accepts connections only from the application security group ['aws_security_group.app'].",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "simulated_check",
+          "source": "simulated-state:aws_db_instance",
+          "outcome": "pass",
+          "detail": "[SIMULATED \u2014 not evidence of real infrastructure] publicly_accessible=False",
+          "observed_at": "2026-10-29T06:27:03.999781Z",
+          "scan_id": null,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-002",
+      "title": "Data encrypted at rest",
+      "description": "Database storage, server volumes and log storage are encrypted.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: data_sensitivity = Customers' personal data",
+      "rationale": "Protects data in snapshots, backups and decommissioned disks.",
+      "decisions": [
+        "DEC-ENCRYPTION"
+      ],
+      "resources": [
+        "aws_db_instance.main",
+        "aws_launch_template.app",
+        "aws_s3_bucket_server_side_encryption_configuration.logs"
+      ],
+      "policies": [
+        "POL-RDS-002",
+        "POL-EC2-003",
+        "POL-S3-002"
+      ],
+      "verification_method": "Plan-based policies on storage_encrypted, EBS and S3 encryption settings.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-EC2-003, POL-RDS-002, POL-S3-002). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-RDS-002",
+          "outcome": "pass",
+          "detail": "aws_db_instance.main: Storage encryption is enabled.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-EC2-003",
+          "outcome": "pass",
+          "detail": "aws_launch_template.app: Volume /dev/xvda encrypted.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-002",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.logs: Default encryption AES256 configured explicitly.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-002",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.uploads: Default encryption AES256 configured explicitly.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "simulated_check",
+          "source": "simulated-state:aws_db_instance",
+          "outcome": "pass",
+          "detail": "[SIMULATED \u2014 not evidence of real infrastructure] storage_encrypted=True",
+          "observed_at": "2026-10-29T06:27:03.999781Z",
+          "scan_id": null,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-003",
+      "title": "Data encrypted in transit",
+      "description": "Users connect over HTTPS (TLS 1.2+); HTTP redirects to HTTPS; database connections require TLS.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: tls = Yes, HTTPS with an ACM certificate",
+      "rationale": "Prevents interception of credentials and customer data.",
+      "decisions": [
+        "DEC-TLS"
+      ],
+      "resources": [
+        "aws_lb_listener.https",
+        "aws_lb_listener.http_redirect",
+        "aws_db_parameter_group.main"
+      ],
+      "policies": [
+        "POL-ALB-001",
+        "POL-ALB-002",
+        "POL-RDS-006"
+      ],
+      "verification_method": "Plan-based listener and parameter-group policies.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-ALB-001, POL-ALB-002, POL-RDS-006). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-ALB-001",
+          "outcome": "pass",
+          "detail": "aws_lb_listener.https: HTTPS listener uses ELBSecurityPolicy-TLS13-1-2-2021-06.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-ALB-002",
+          "outcome": "pass",
+          "detail": "aws_lb_listener.http_redirect: HTTP requests are redirected to HTTPS.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-RDS-006",
+          "outcome": "pass",
+          "detail": "aws_db_instance.main: Database parameter group enforces TLS connections (rds.force_ssl = 1).",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-004",
+      "title": "No administrative or database ports exposed to the internet",
+      "description": "No security group allows SSH, RDP, database or all-port access from 0.0.0.0/0 or ::/0. Administration uses AWS Systems Manager Session Manager.",
+      "category": "security",
+      "priority": "must",
+      "severity": "critical",
+      "origin": "confirmed",
+      "source": "Interview: admin_access = AWS Systems Manager Session Manager (no open ports)",
+      "rationale": "Internet-exposed administrative interfaces are continuously scanned and brute-forced.",
+      "decisions": [
+        "DEC-ADMIN-ACCESS"
+      ],
+      "resources": [
+        "aws_security_group.alb",
+        "aws_security_group.app",
+        "aws_default_security_group.default"
+      ],
+      "policies": [
+        "POL-SG-001",
+        "POL-SG-004"
+      ],
+      "verification_method": "Plan-based analysis of every ingress rule.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-SG-001, POL-SG-004). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-SG-001",
+          "outcome": "pass",
+          "detail": "aws_vpc_security_group_ingress_rule.alb_http: Internet ingress on port 80 is limited to the internet-facing load balancer.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-SG-001",
+          "outcome": "pass",
+          "detail": "aws_vpc_security_group_ingress_rule.alb_https: Internet ingress on port 443 is limited to the internet-facing load balancer.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-SG-004",
+          "outcome": "pass",
+          "detail": "aws_default_security_group.default: Default security group denies all traffic.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-NET-001",
+      "title": "Application servers reachable only through the load balancer",
+      "description": "Application security group accepts traffic only from the load balancer security group.",
+      "category": "networking",
+      "priority": "must",
+      "severity": "critical",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Keeps servers off the internet even if they have public IPs for outbound traffic.",
+      "decisions": [
+        "DEC-NET-TIERS"
+      ],
+      "resources": [
+        "aws_security_group.app",
+        "aws_vpc_security_group_ingress_rule.app_from_alb"
+      ],
+      "policies": [
+        "POL-SG-003"
+      ],
+      "verification_method": "Plan-based security group reference analysis.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-SG-003). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-SG-003",
+          "outcome": "pass",
+          "detail": "aws_vpc_security_group_ingress_rule.app_from_alb: Application servers accept traffic only from the load balancer.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-005",
+      "title": "Least-privilege access for workloads",
+      "description": "Application servers use a role with only the permissions they need; no administrator policies, wildcard grants or IAM users with access keys.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Limits the blast radius of a compromised server.",
+      "decisions": [
+        "DEC-IAM"
+      ],
+      "resources": [
+        "aws_iam_role.app",
+        "aws_iam_role_policy.app_read_db_secret",
+        "aws_iam_role_policy_attachment.app_ssm"
+      ],
+      "policies": [
+        "POL-IAM-001",
+        "POL-IAM-002",
+        "POL-IAM-003"
+      ],
+      "verification_method": "Plan-based IAM policy document analysis.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-IAM-001, POL-IAM-002, POL-IAM-003). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-IAM-001",
+          "outcome": "pass",
+          "detail": "aws_iam_role_policy.app_read_db_secret: Policy grants specific actions only.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-IAM-001",
+          "outcome": "pass",
+          "detail": "aws_iam_role_policy.app_uploads: Policy grants specific actions only.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-IAM-002",
+          "outcome": "pass",
+          "detail": "aws_iam_role_policy_attachment.app_ssm: Attaches arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-IAM-003",
+          "outcome": "pass",
+          "detail": "configuration: No IAM users or long-lived access keys are created.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-006",
+      "title": "Secrets are never stored in configuration",
+      "description": "Database credentials are generated and held by AWS Secrets Manager; no credentials appear in Terraform, user data or tags.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Terraform state and plan files are widely readable and long-lived.",
+      "decisions": [
+        "DEC-SECRETS"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "policies": [
+        "POL-RDS-005",
+        "POL-SEC-002"
+      ],
+      "verification_method": "Plan-based attribute policy plus supplementary credential pattern scan.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-RDS-005, POL-SEC-002). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-RDS-005",
+          "outcome": "pass",
+          "detail": "aws_db_instance.main: Master password is generated and rotated by RDS in AWS Secrets Manager.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-SEC-002",
+          "outcome": "pass",
+          "detail": "configuration: No credential patterns found in user data, tags or environment values.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-007",
+      "title": "Server metadata service hardened",
+      "description": "Instances require IMDSv2 session tokens.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Mitigates SSRF-based theft of instance credentials.",
+      "decisions": [
+        "DEC-IAM"
+      ],
+      "resources": [
+        "aws_launch_template.app"
+      ],
+      "policies": [
+        "POL-EC2-001"
+      ],
+      "verification_method": "Plan-based launch template policy.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-EC2-001). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-EC2-001",
+          "outcome": "pass",
+          "detail": "aws_launch_template.app: Instance metadata requires session tokens (IMDSv2).",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-008",
+      "title": "Log storage is private and tamper-resistant",
+      "description": "The log bucket blocks all public access, is encrypted and versioned.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Logs often contain sensitive data and are evidence during incidents.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_s3_bucket.logs",
+        "aws_s3_bucket_public_access_block.logs",
+        "aws_s3_bucket_versioning.logs"
+      ],
+      "policies": [
+        "POL-S3-001",
+        "POL-S3-002",
+        "POL-S3-003"
+      ],
+      "verification_method": "Plan-based S3 policies.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-S3-001, POL-S3-002, POL-S3-003). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-001",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket_public_access_block.logs: All four public access block settings are enabled.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-001",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket_public_access_block.uploads: All four public access block settings are enabled.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-002",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.logs: Default encryption AES256 configured explicitly.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-002",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.uploads: Default encryption AES256 configured explicitly.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-003",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.logs: Versioning enabled, protecting log objects from overwrite.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-003",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.uploads: Versioning enabled, protecting log objects from overwrite.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "simulated_check",
+          "source": "simulated-state:aws_s3_bucket_public_access_block",
+          "outcome": "pass",
+          "detail": "[SIMULATED \u2014 not evidence of real infrastructure] all four settings true: True",
+          "observed_at": "2026-10-29T06:27:03.999781Z",
+          "scan_id": null,
+          "data": {}
+        },
+        {
+          "kind": "simulated_check",
+          "source": "simulated-state:aws_s3_bucket_public_access_block",
+          "outcome": "pass",
+          "detail": "[SIMULATED \u2014 not evidence of real infrastructure] all four settings true: True",
+          "observed_at": "2026-10-29T06:27:03.999781Z",
+          "scan_id": null,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-AUD-001",
+      "title": "Audit trail of infrastructure changes",
+      "description": "A multi-region CloudTrail trail with log file validation records every AWS API call.",
+      "category": "compliance",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: audit_logging = Yes, record an audit trail; compliance = None that I know of",
+      "rationale": "Answers who changed what, and when.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_cloudtrail.main"
+      ],
+      "policies": [
+        "POL-LOG-001"
+      ],
+      "verification_method": "Plan-based CloudTrail policy; live trail status after a real deployment.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-LOG-001). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-LOG-001",
+          "outcome": "pass",
+          "detail": "aws_cloudtrail.main: Multi-region trail with tamper-evident log validation.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "simulated_check",
+          "source": "simulated-state:aws_cloudtrail",
+          "outcome": "pass",
+          "detail": "[SIMULATED \u2014 not evidence of real infrastructure] enable_logging=True",
+          "observed_at": "2026-10-29T06:27:03.999781Z",
+          "scan_id": null,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-AUD-002",
+      "title": "Network and request logging",
+      "description": "VPC flow logs and load balancer access logs are delivered to the private log bucket.",
+      "category": "operational",
+      "priority": "should",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: audit_logging = Yes, record an audit trail; environment = Production",
+      "rationale": "Needed to investigate incidents and abuse.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_flow_log.vpc",
+        "aws_lb.app"
+      ],
+      "policies": [
+        "POL-LOG-002",
+        "POL-LOG-003"
+      ],
+      "verification_method": "Plan-based logging policies.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-LOG-002, POL-LOG-003). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-LOG-002",
+          "outcome": "pass",
+          "detail": "aws_vpc.main: VPC flow logs capture all traffic.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-LOG-003",
+          "outcome": "pass",
+          "detail": "aws_lb.app: Access logs delivered to S3.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-AVL-001",
+      "title": "Application keeps running when a server fails",
+      "description": "An auto scaling group with load balancer health checks keeps at least 2 instance(s) running across two availability zones.",
+      "category": "availability",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: availability = Short outages (minutes to an hour) are acceptable; environment = Production",
+      "rationale": "Servers fail; replacement must be automatic.",
+      "decisions": [
+        "DEC-COMPUTE"
+      ],
+      "resources": [
+        "aws_autoscaling_group.app"
+      ],
+      "policies": [
+        "POL-AVL-001"
+      ],
+      "verification_method": "Plan-based ASG configuration policy.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-AVL-001). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-AVL-001",
+          "outcome": "pass",
+          "detail": "aws_autoscaling_group.app: At least 2 instance(s) across 2 subnets with load balancer health checks.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "simulated_check",
+          "source": "simulation",
+          "outcome": "error",
+          "detail": "[SIMULATED \u2014 not evidence of real infrastructure] Not run: simulated resources have no endpoint to call.",
+          "observed_at": "2026-10-29T06:27:03.999781Z",
+          "scan_id": null,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-AVL-003",
+      "title": "Automated database backups retained \u2265 7 day(s)",
+      "description": "Point-in-time recovery is available for at least 7 day(s).",
+      "category": "availability",
+      "priority": "must",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: recovery_window = 7 days; compliance = None that I know of",
+      "rationale": "Recovers from data corruption and accidental deletion.",
+      "decisions": [
+        "DEC-DB-HA"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "policies": [
+        "POL-RDS-003"
+      ],
+      "verification_method": "Plan-based backup_retention_period policy.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-RDS-003). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-RDS-003",
+          "outcome": "pass",
+          "detail": "aws_db_instance.main: Automated backups retained for 7 day(s); requirement is at least 7.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-OPS-001",
+      "title": "Production data protected from accidental deletion",
+      "description": "Deletion protection is enabled and a final snapshot is taken if the database is ever deleted.",
+      "category": "operational",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: environment = Production",
+      "rationale": "A single mistaken command must not destroy customer data.",
+      "decisions": [
+        "DEC-DB-HA"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "policies": [
+        "POL-RDS-004"
+      ],
+      "verification_method": "Plan-based deletion settings policy.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-RDS-004). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-RDS-004",
+          "outcome": "pass",
+          "detail": "aws_db_instance.main: Deletion protection is on and a final snapshot is taken on deletion.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-PRF-001",
+      "title": "Capacity scales with traffic",
+      "description": "Target-tracking auto scaling adds servers when average CPU exceeds 60%.",
+      "category": "performance",
+      "priority": "should",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: traffic = Moderate; traffic_pattern = Fairly steady, day and night",
+      "rationale": "The original request mentioned handling increasing traffic.",
+      "decisions": [
+        "DEC-COMPUTE"
+      ],
+      "resources": [
+        "aws_autoscaling_group.app",
+        "aws_autoscaling_policy.cpu_target"
+      ],
+      "policies": [
+        "POL-PRF-001"
+      ],
+      "verification_method": "Plan-based scaling policy check.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-PRF-001). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-PRF-001",
+          "outcome": "pass",
+          "detail": "aws_autoscaling_group.app: Target-tracking scaling from 2 to 6 instances.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-CST-001",
+      "title": "Estimated monthly cost within $400",
+      "description": "The selected architecture's estimated monthly cost does not exceed the budget. Security controls are never removed to meet it.",
+      "category": "cost",
+      "priority": "must",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: budget = $400 / month",
+      "rationale": "Stated monthly budget.",
+      "decisions": [
+        "DEC-COST"
+      ],
+      "resources": [],
+      "policies": [],
+      "verification_method": "Cost model estimate (approximate; not a billing guarantee).",
+      "status": "passing",
+      "verification_level": "estimate",
+      "status_reason": "Estimated $194/month against a $400 budget ($206 headroom). Variable charges can exceed this estimate. (approximate estimate, not a billing guarantee)",
+      "evidence": [
+        {
+          "kind": "cost_estimate",
+          "source": "cost-model:static-price-table",
+          "outcome": "pass",
+          "detail": "$194.02/month estimated vs $400 budget",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": null,
+          "data": {
+            "pricing_as_of": "price table v1 \u2014 compiled from AWS published rates as of 2025; verify with the AWS Pricing Calculator"
+          }
+        }
+      ]
+    },
+    {
+      "id": "REQ-SEC-010",
+      "title": "Uploaded files are private and encrypted",
+      "description": "User files live in a dedicated S3 bucket that blocks all public access, is encrypted and versioned, rejects unencrypted connections, and is readable and writable only by the application's role.",
+      "category": "security",
+      "priority": "must",
+      "severity": "high",
+      "origin": "confirmed",
+      "source": "Interview: file_uploads = Yes, store files in a private S3 bucket; data_sensitivity = Customers' personal data",
+      "rationale": "Misconfigured file buckets are a leading cause of public data leaks.",
+      "decisions": [
+        "DEC-STORAGE"
+      ],
+      "resources": [
+        "aws_s3_bucket.uploads",
+        "aws_s3_bucket_public_access_block.uploads",
+        "aws_s3_bucket_server_side_encryption_configuration.uploads",
+        "aws_iam_role_policy.app_uploads"
+      ],
+      "policies": [
+        "POL-S3-001",
+        "POL-S3-002",
+        "POL-S3-003",
+        "POL-IAM-001"
+      ],
+      "verification_method": "Plan-based S3 and IAM policies; every bucket in the plan is checked.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-IAM-001, POL-S3-001, POL-S3-002, POL-S3-003). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-001",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket_public_access_block.logs: All four public access block settings are enabled.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-001",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket_public_access_block.uploads: All four public access block settings are enabled.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-002",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.logs: Default encryption AES256 configured explicitly.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-002",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.uploads: Default encryption AES256 configured explicitly.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-003",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.logs: Versioning enabled, protecting log objects from overwrite.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-S3-003",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.uploads: Versioning enabled, protecting log objects from overwrite.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-IAM-001",
+          "outcome": "pass",
+          "detail": "aws_iam_role_policy.app_read_db_secret: Policy grants specific actions only.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-IAM-001",
+          "outcome": "pass",
+          "detail": "aws_iam_role_policy.app_uploads: Policy grants specific actions only.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-AUD-003",
+      "title": "Logs retained for at least 90 days",
+      "description": "Log bucket lifecycle rules and CloudWatch log groups keep logs for at least 90 days before deleting them.",
+      "category": "compliance",
+      "priority": "should",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: log_retention = 90 days; compliance = None that I know of",
+      "rationale": "Logs are the evidence trail for incident investigations and audits.",
+      "decisions": [
+        "DEC-LOGGING"
+      ],
+      "resources": [
+        "aws_s3_bucket_lifecycle_configuration.logs",
+        "aws_cloudwatch_log_group.postgresql"
+      ],
+      "policies": [
+        "POL-LOG-004"
+      ],
+      "verification_method": "Plan-based lifecycle expiration and log group retention policy.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-LOG-004). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-LOG-004",
+          "outcome": "pass",
+          "detail": "aws_s3_bucket.logs: Log objects expire after 90 days. Requirement: at least 90 days.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-LOG-004",
+          "outcome": "pass",
+          "detail": "aws_cloudwatch_log_group.postgresql: Log group keeps events for 90 days; requirement is at least 90 days.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-OPS-003",
+      "title": "Someone is alerted when the service is unhealthy",
+      "description": "CloudWatch alarms on load balancer errors and unhealthy servers and database CPU and free storage notify ops@example.com through an encrypted SNS topic.",
+      "category": "operational",
+      "priority": "must",
+      "severity": "medium",
+      "origin": "confirmed",
+      "source": "Interview: ops_team = A developer with some AWS experience; alerting = Yes, send email alerts; alert_email = ops@example.com",
+      "rationale": "Problems should reach your team before they reach your customers.",
+      "decisions": [
+        "DEC-MONITORING"
+      ],
+      "resources": [
+        "aws_sns_topic.alerts",
+        "aws_sns_topic_subscription.email",
+        "aws_kms_key.alerts",
+        "aws_cloudwatch_metric_alarm.alb_5xx",
+        "aws_cloudwatch_metric_alarm.unhealthy_hosts",
+        "aws_cloudwatch_metric_alarm.db_cpu",
+        "aws_cloudwatch_metric_alarm.db_free_storage"
+      ],
+      "policies": [
+        "POL-OPS-001",
+        "POL-OPS-002"
+      ],
+      "verification_method": "Plan-based check that alarms watch the load balancer and notify a subscribed, encrypted topic.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-OPS-001, POL-OPS-002). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-OPS-001",
+          "outcome": "pass",
+          "detail": "aws_lb.app: 2 alarm(s) on this load balancer notify a subscribed SNS topic.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        },
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-OPS-002",
+          "outcome": "pass",
+          "detail": "aws_sns_topic.alerts: Topic encrypted with a customer-managed KMS key.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "REQ-OPS-002",
+      "title": "Resources are tagged for ownership and cost tracking",
+      "description": "Every taggable resource carries Project, Environment and ManagedBy tags.",
+      "category": "operational",
+      "priority": "could",
+      "severity": "low",
+      "origin": "derived",
+      "source": "Security-first baseline (always applied)",
+      "rationale": "Enables cost allocation and safe cleanup.",
+      "decisions": [
+        "DEC-TAGS"
+      ],
+      "resources": [
+        "provider.aws"
+      ],
+      "policies": [
+        "POL-TAG-001"
+      ],
+      "verification_method": "Plan-based tag policy.",
+      "status": "passing",
+      "verification_level": "static_config",
+      "status_reason": "All mapped policies pass on the Terraform plan (POL-TAG-001). Static analysis only \u2014 not verified against a live environment.",
+      "evidence": [
+        {
+          "kind": "policy_result",
+          "source": "policy:POL-TAG-001",
+          "outcome": "pass",
+          "detail": "configuration: All 46 taggable resources carry Project, Environment and ManagedBy tags.",
+          "observed_at": "2026-10-29T06:26:47.909873Z",
+          "scan_id": "6de225d9d528480dbc5d89aaf0536e98",
+          "data": {}
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "A-00",
+      "statement": "PostgreSQL 16 on Amazon RDS is the database engine.",
+      "reason": "You indicated a relational database; PostgreSQL is a widely supported default.",
+      "can_change_in": "Interview answer needs_database / Terraform"
+    },
+    {
+      "id": "A-01",
+      "statement": "Application servers run Amazon Linux 2023 on Graviton (arm64) instances and Node.js listens on port 3000 behind the load balancer.",
+      "reason": "Lowest-cost general-purpose option, with the usual default port for your runtime; a placeholder app is installed until you deploy your own.",
+      "can_change_in": "Architecture workspace / Terraform variables"
+    },
+    {
+      "id": "A-02",
+      "statement": "Two availability zones are used.",
+      "reason": "The minimum for a load balancer and a Multi-AZ-capable database.",
+      "can_change_in": "Terraform variable availability_zones"
+    },
+    {
+      "id": "A-03",
+      "statement": "AWS-managed encryption keys are used (not customer-managed KMS keys).",
+      "reason": "No extra cost or key administration; switch to customer-managed keys if your compliance program requires key control.",
+      "can_change_in": "Terraform"
+    },
+    {
+      "id": "A-04",
+      "statement": "Terraform state is stored locally for this MVP.",
+      "reason": "Avoids creating a state bucket; not suitable for teams or production.",
+      "can_change_in": "Generated README"
+    },
+    {
+      "id": "A-07",
+      "statement": "The database starts with 20 GB of storage and grows automatically up to 100 GB.",
+      "reason": "Sized from your first-year data estimate.",
+      "can_change_in": "Interview answer db_size / Terraform"
+    },
+    {
+      "id": "A-05",
+      "statement": "You will supply an issued ACM certificate ARN for your domain before a real deployment.",
+      "reason": "HTTPS requires a certificate; the simulation uses a placeholder ARN.",
+      "can_change_in": "terraform.tfvars"
+    }
+  ],
+  "unresolved": [
+    "ACM certificate ARN for the application's domain (required before a real deployment).",
+    "Confirm the SNS email subscription: AWS sends a confirmation link to ops@example.com after a real deployment."
+  ],
+  "architecture": {
+    "id": "balanced",
+    "name": "Balanced",
+    "summary": "Three-tier layout with private application servers, one NAT gateway and a Multi-AZ database.",
+    "params": {
+      "region": "us-east-1",
+      "availability_zones": [
+        "us-east-1a",
+        "us-east-1b"
+      ],
+      "environment": "production",
+      "app_port": 3000,
+      "app_subnets_private": true,
+      "nat_gateways": 1,
+      "instance_type": "t4g.medium",
+      "instance_arch": "arm64",
+      "asg_min": 2,
+      "asg_max": 6,
+      "asg_desired": 2,
+      "db_enabled": true,
+      "db_engine_version": "16",
+      "db_instance_class": "db.t4g.small",
+      "db_multi_az": true,
+      "db_storage_gb": 20,
+      "backup_retention_days": 7,
+      "deletion_protection": true,
+      "waf": false,
+      "cloudtrail": true,
+      "flow_logs": true,
+      "alb_access_logs": true,
+      "log_retention_days": 90,
+      "https": true,
+      "admin_access": "ssm",
+      "admin_cidr": null,
+      "allowed_regions": [],
+      "app_runtime": "node",
+      "scale_out_cpu": 60,
+      "scheduled_scaling": false,
+      "schedule_timezone": "America/New_York",
+      "uploads_bucket": true,
+      "alerts": true,
+      "alert_email": "ops@example.com"
+    },
+    "components": [
+      {
+        "id": "users",
+        "kind": "users",
+        "label": "Customers",
+        "parent": null,
+        "tier": "edge",
+        "details": {},
+        "rationale": "Internet users reach the application only through the load balancer.",
+        "requirements": [],
+        "terraform_addresses": [],
+        "security_boundary": null
+      },
+      {
+        "id": "account",
+        "kind": "account",
+        "label": "AWS account",
+        "parent": null,
+        "tier": "account",
+        "details": {
+          "Guard": "allowed_account_ids pins the target account"
+        },
+        "rationale": "Terraform refuses to run against any other account.",
+        "requirements": [
+          "REQ-OPS-002"
+        ],
+        "terraform_addresses": [
+          "provider.aws"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "region",
+        "kind": "region",
+        "label": "Region us-east-1",
+        "parent": "account",
+        "tier": "regional",
+        "details": {
+          "Allowed regions": "any"
+        },
+        "rationale": "Region selected in the interview.",
+        "requirements": [],
+        "terraform_addresses": [],
+        "security_boundary": null
+      },
+      {
+        "id": "vpc",
+        "kind": "vpc",
+        "label": "VPC 10.20.0.0/16",
+        "parent": "region",
+        "tier": "regional",
+        "details": {
+          "AZs": "us-east-1a, us-east-1b"
+        },
+        "rationale": "Private network with separate tiers per availability zone.",
+        "requirements": [],
+        "terraform_addresses": [
+          "aws_vpc.main",
+          "aws_default_security_group.default"
+        ],
+        "security_boundary": "Network boundary"
+      },
+      {
+        "id": "public_subnets",
+        "kind": "subnet",
+        "label": "Public subnets (2 AZs)",
+        "parent": "vpc",
+        "tier": "public",
+        "details": {
+          "Route": "0.0.0.0/0 \u2192 internet gateway",
+          "Contains": "load balancer, NAT"
+        },
+        "rationale": "Only components that must face the internet live here.",
+        "requirements": [],
+        "terraform_addresses": [
+          "aws_subnet.public",
+          "aws_route_table.public",
+          "aws_internet_gateway.main"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "app_subnets",
+        "kind": "subnet",
+        "label": "Private app subnets (2 AZs)",
+        "parent": "vpc",
+        "tier": "private_app",
+        "details": {
+          "Route": "0.0.0.0/0 \u2192 NAT (1)"
+        },
+        "rationale": "Servers are not directly reachable from the internet.",
+        "requirements": [],
+        "terraform_addresses": [
+          "aws_subnet.app",
+          "aws_route_table.app"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "nat",
+        "kind": "nat",
+        "label": "NAT gateway \u00d71",
+        "parent": "public_subnets",
+        "tier": "public",
+        "details": {
+          "Purpose": "outbound updates and AWS API calls"
+        },
+        "rationale": "A single NAT keeps cost down; if its AZ fails, outbound traffic from servers stops.",
+        "requirements": [],
+        "terraform_addresses": [
+          "aws_nat_gateway.main",
+          "aws_eip.nat"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "data_subnets",
+        "kind": "subnet",
+        "label": "Isolated data subnets (2 AZs)",
+        "parent": "vpc",
+        "tier": "private_data",
+        "details": {
+          "Route": "none (no internet route)"
+        },
+        "rationale": "The database has no path to or from the internet.",
+        "requirements": [
+          "REQ-SEC-001"
+        ],
+        "terraform_addresses": [
+          "aws_subnet.data",
+          "aws_route_table.data"
+        ],
+        "security_boundary": "Data boundary"
+      },
+      {
+        "id": "alb",
+        "kind": "alb",
+        "label": "Application Load Balancer",
+        "parent": "public_subnets",
+        "tier": "public",
+        "details": {
+          "Listeners": "443 HTTPS (TLS 1.2+), 80 \u2192 301 redirect",
+          "Invalid headers": "dropped",
+          "Access logs": "S3"
+        },
+        "rationale": "Single public entry point; terminates TLS and spreads load across zones.",
+        "requirements": [
+          "REQ-SEC-003",
+          "REQ-AUD-002"
+        ],
+        "terraform_addresses": [
+          "aws_lb.app",
+          "aws_lb_target_group.app",
+          "aws_lb_listener.https",
+          "aws_security_group.alb"
+        ],
+        "security_boundary": "Ingress: 80/443 from internet only"
+      },
+      {
+        "id": "app",
+        "kind": "asg",
+        "label": "App servers (auto scaling)",
+        "parent": "app_subnets",
+        "tier": "private_app",
+        "details": {
+          "Runtime": "Node.js on port 3000",
+          "Instance": "t4g.medium",
+          "Capacity": "2\u20136 (desired 2)",
+          "Scale out": "above 60% CPU",
+          "Metadata": "IMDSv2 required",
+          "Disk": "encrypted gp3",
+          "Public IP": "no"
+        },
+        "rationale": "Replaced automatically when unhealthy; scales on CPU.",
+        "requirements": [
+          "REQ-NET-001",
+          "REQ-SEC-007",
+          "REQ-AVL-001",
+          "REQ-PRF-001",
+          "REQ-SEC-002"
+        ],
+        "terraform_addresses": [
+          "aws_autoscaling_group.app",
+          "aws_launch_template.app",
+          "aws_autoscaling_policy.cpu_target",
+          "aws_security_group.app"
+        ],
+        "security_boundary": "Ingress: ALB security group only"
+      },
+      {
+        "id": "iam",
+        "kind": "iam",
+        "label": "Instance role",
+        "parent": null,
+        "tier": "regional",
+        "details": {
+          "Grants": "SSM Session Manager, read own DB secret"
+        },
+        "rationale": "Temporary credentials with only the permissions the servers need.",
+        "requirements": [
+          "REQ-SEC-005"
+        ],
+        "terraform_addresses": [
+          "aws_iam_role.app",
+          "aws_iam_instance_profile.app",
+          "aws_iam_role_policy_attachment.app_ssm",
+          "aws_iam_role_policy.app_read_db_secret"
+        ],
+        "security_boundary": "IAM boundary"
+      },
+      {
+        "id": "ssm",
+        "kind": "ssm",
+        "label": "SSM Session Manager",
+        "parent": null,
+        "tier": "regional",
+        "details": {
+          "Open ports": "none"
+        },
+        "rationale": "Administrative access without exposing ports to the internet.",
+        "requirements": [
+          "REQ-SEC-004"
+        ],
+        "terraform_addresses": [],
+        "security_boundary": null
+      },
+      {
+        "id": "db",
+        "kind": "rds",
+        "label": "RDS PostgreSQL 16",
+        "parent": "data_subnets",
+        "tier": "private_data",
+        "details": {
+          "Class": "db.t4g.small",
+          "Multi-AZ": "yes",
+          "Encryption": "at rest + TLS enforced",
+          "Backups": "7 days",
+          "Deletion protection": "on",
+          "Public": "no"
+        },
+        "rationale": "Managed PostgreSQL with automated backups and patching.",
+        "requirements": [
+          "REQ-SEC-001",
+          "REQ-SEC-002",
+          "REQ-SEC-003",
+          "REQ-AVL-003",
+          "REQ-OPS-001"
+        ],
+        "terraform_addresses": [
+          "aws_db_instance.main",
+          "aws_db_subnet_group.main",
+          "aws_db_parameter_group.main",
+          "aws_security_group.db"
+        ],
+        "security_boundary": "Ingress: app security group, 5432 only"
+      },
+      {
+        "id": "secrets",
+        "kind": "secrets",
+        "label": "Secrets Manager",
+        "parent": null,
+        "tier": "regional",
+        "details": {
+          "Holds": "RDS-managed master password"
+        },
+        "rationale": "Credentials are generated and rotated by AWS, never stored in Terraform.",
+        "requirements": [
+          "REQ-SEC-006"
+        ],
+        "terraform_addresses": [
+          "aws_db_instance.main"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "uploads",
+        "kind": "s3",
+        "label": "Uploads bucket (S3)",
+        "parent": null,
+        "tier": "regional",
+        "details": {
+          "Public access": "blocked",
+          "Encryption": "SSE-S3",
+          "Versioning": "on",
+          "Access": "app role only, TLS only"
+        },
+        "rationale": "User files live outside the servers so they survive replacement and scaling.",
+        "requirements": [
+          "REQ-SEC-010"
+        ],
+        "terraform_addresses": [
+          "aws_s3_bucket.uploads",
+          "aws_s3_bucket_public_access_block.uploads",
+          "aws_s3_bucket_policy.uploads",
+          "aws_iam_role_policy.app_uploads"
+        ],
+        "security_boundary": "Data boundary"
+      },
+      {
+        "id": "alerts",
+        "kind": "alerts",
+        "label": "Alerts (CloudWatch \u2192 email)",
+        "parent": null,
+        "tier": "regional",
+        "details": {
+          "Alarms": "5xx errors, unhealthy servers, DB CPU, DB free storage",
+          "Notify": "ops@example.com",
+          "Topic": "SNS, KMS-encrypted"
+        },
+        "rationale": "Your team hears about problems before customers do.",
+        "requirements": [
+          "REQ-OPS-003"
+        ],
+        "terraform_addresses": [
+          "aws_sns_topic.alerts",
+          "aws_sns_topic_subscription.email",
+          "aws_kms_key.alerts",
+          "aws_cloudwatch_metric_alarm.alb_5xx",
+          "aws_cloudwatch_metric_alarm.unhealthy_hosts",
+          "aws_cloudwatch_metric_alarm.db_cpu",
+          "aws_cloudwatch_metric_alarm.db_free_storage"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "logs",
+        "kind": "s3",
+        "label": "Log bucket (S3)",
+        "parent": null,
+        "tier": "regional",
+        "details": {
+          "Public access": "blocked",
+          "Encryption": "SSE-S3",
+          "Versioning": "on",
+          "Retention": "90 days"
+        },
+        "rationale": "Private, tamper-resistant store for access, flow and audit logs.",
+        "requirements": [
+          "REQ-SEC-008"
+        ],
+        "terraform_addresses": [
+          "aws_s3_bucket.logs",
+          "aws_s3_bucket_public_access_block.logs",
+          "aws_s3_bucket_policy.logs"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "cloudtrail",
+        "kind": "cloudtrail",
+        "label": "CloudTrail",
+        "parent": null,
+        "tier": "account",
+        "details": {
+          "Scope": "all regions",
+          "Integrity": "log file validation"
+        },
+        "rationale": "Records every AWS API call for auditing.",
+        "requirements": [
+          "REQ-AUD-001"
+        ],
+        "terraform_addresses": [
+          "aws_cloudtrail.main"
+        ],
+        "security_boundary": null
+      },
+      {
+        "id": "flowlogs",
+        "kind": "flowlogs",
+        "label": "VPC flow logs",
+        "parent": "vpc",
+        "tier": "regional",
+        "details": {
+          "Traffic": "ALL"
+        },
+        "rationale": "Network-level record of accepted and rejected connections.",
+        "requirements": [
+          "REQ-AUD-002"
+        ],
+        "terraform_addresses": [
+          "aws_flow_log.vpc"
+        ],
+        "security_boundary": null
+      }
+    ],
+    "connections": [
+      {
+        "id": "c-users",
+        "source": "users",
+        "target": "alb",
+        "label": "HTTPS 443",
+        "kind": "traffic"
+      },
+      {
+        "id": "c-alb-app",
+        "source": "alb",
+        "target": "app",
+        "label": "HTTP 3000",
+        "kind": "traffic"
+      },
+      {
+        "id": "c-app-egress",
+        "source": "app",
+        "target": "nat",
+        "label": "HTTPS out (updates, AWS APIs)",
+        "kind": "egress"
+      },
+      {
+        "id": "c-alb-logs",
+        "source": "alb",
+        "target": "logs",
+        "label": "access logs",
+        "kind": "logs"
+      },
+      {
+        "id": "c-admin",
+        "source": "ssm",
+        "target": "app",
+        "label": "admin sessions",
+        "kind": "admin"
+      },
+      {
+        "id": "c-app-db",
+        "source": "app",
+        "target": "db",
+        "label": "PostgreSQL 5432 (TLS)",
+        "kind": "data"
+      },
+      {
+        "id": "c-app-secret",
+        "source": "app",
+        "target": "secrets",
+        "label": "read DB secret",
+        "kind": "data"
+      },
+      {
+        "id": "c-app-uploads",
+        "source": "app",
+        "target": "uploads",
+        "label": "files over TLS (IAM-scoped)",
+        "kind": "data"
+      },
+      {
+        "id": "c-alb-alerts",
+        "source": "alb",
+        "target": "alerts",
+        "label": "metrics \u2192 alarms",
+        "kind": "logs"
+      },
+      {
+        "id": "c-trail",
+        "source": "cloudtrail",
+        "target": "logs",
+        "label": "audit logs",
+        "kind": "logs"
+      },
+      {
+        "id": "c-flow",
+        "source": "flowlogs",
+        "target": "logs",
+        "label": "flow logs",
+        "kind": "logs"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-NET-TIERS",
+        "title": "Network tiers",
+        "choice": "Public / private app / isolated data subnets",
+        "rationale": "Each tier can only be reached from the tier in front of it.",
+        "alternatives": [
+          "Public app subnets (cheaper, weaker isolation)"
+        ],
+        "requirements": [
+          "REQ-SEC-001",
+          "REQ-NET-001"
+        ]
+      },
+      {
+        "id": "DEC-ADMIN-ACCESS",
+        "title": "Administrative access",
+        "choice": "AWS Systems Manager Session Manager",
+        "rationale": "No inbound administrative ports; sessions are authenticated with IAM and can be logged.",
+        "alternatives": [
+          "Bastion host",
+          "SSH from a fixed range"
+        ],
+        "requirements": [
+          "REQ-SEC-004"
+        ]
+      },
+      {
+        "id": "DEC-IAM",
+        "title": "Workload identity",
+        "choice": "EC2 instance role with SSM core policy and a tag-scoped secret read",
+        "rationale": "Temporary credentials, no access keys on servers.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-SEC-005",
+          "REQ-SEC-007"
+        ]
+      },
+      {
+        "id": "DEC-ENCRYPTION",
+        "title": "Encryption at rest",
+        "choice": "AWS-managed keys for RDS, EBS and S3",
+        "rationale": "Encryption with no key-management overhead.",
+        "alternatives": [
+          "Customer-managed KMS keys (~$1/key/month, more control)"
+        ],
+        "requirements": [
+          "REQ-SEC-002"
+        ]
+      },
+      {
+        "id": "DEC-LOGGING",
+        "title": "Logging",
+        "choice": "CloudTrail, VPC flow logs, ALB access logs",
+        "rationale": "Delivered to one private bucket with 90-day retention.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-AUD-001",
+          "REQ-AUD-002",
+          "REQ-AUD-003",
+          "REQ-SEC-008"
+        ]
+      },
+      {
+        "id": "DEC-COMPUTE",
+        "title": "Compute",
+        "choice": "Auto scaling group of t4g.medium (2\u20136), scaling out above 60% CPU",
+        "rationale": "Self-healing and elastic without container-platform complexity.",
+        "alternatives": [
+          "ECS Fargate (no server management, higher unit cost)"
+        ],
+        "requirements": [
+          "REQ-AVL-001",
+          "REQ-PRF-001"
+        ]
+      },
+      {
+        "id": "DEC-COST",
+        "title": "Cost posture",
+        "choice": "Balanced",
+        "rationale": "See the cost breakdown and trade-offs.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-CST-001"
+        ]
+      },
+      {
+        "id": "DEC-TAGS",
+        "title": "Tagging",
+        "choice": "Provider default_tags",
+        "rationale": "Every resource is attributable to this project.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-OPS-002"
+        ]
+      },
+      {
+        "id": "DEC-TLS",
+        "title": "TLS",
+        "choice": "TLS 1.2+ at the load balancer, TLS enforced to the database",
+        "rationale": "Encrypts every hop that crosses a network boundary.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-SEC-003"
+        ]
+      },
+      {
+        "id": "DEC-DB-PLACEMENT",
+        "title": "Database placement",
+        "choice": "RDS in isolated subnets",
+        "rationale": "No route to or from the internet.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-SEC-001"
+        ]
+      },
+      {
+        "id": "DEC-DB-HA",
+        "title": "Database resilience",
+        "choice": "Multi-AZ, 7-day backups",
+        "rationale": "Multi-AZ fails over automatically in 1\u20132 minutes.",
+        "alternatives": [
+          "Single-AZ"
+        ],
+        "requirements": [
+          "REQ-AVL-003",
+          "REQ-OPS-001"
+        ]
+      },
+      {
+        "id": "DEC-SECRETS",
+        "title": "Database credentials",
+        "choice": "RDS-managed master password in Secrets Manager",
+        "rationale": "Credentials never touch Terraform state or the repository.",
+        "alternatives": [],
+        "requirements": [
+          "REQ-SEC-006"
+        ]
+      },
+      {
+        "id": "DEC-STORAGE",
+        "title": "File storage",
+        "choice": "Private S3 bucket with an IAM policy scoped to the app role",
+        "rationale": "Durable, encrypted object storage that servers can be replaced around; never public.",
+        "alternatives": [
+          "EFS shared file system (more expensive, POSIX semantics)"
+        ],
+        "requirements": [
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "id": "DEC-MONITORING",
+        "title": "Alerting",
+        "choice": "CloudWatch alarms \u2192 KMS-encrypted SNS topic \u2192 ops@example.com",
+        "rationale": "A customer-managed key is used because CloudWatch cannot publish to topics encrypted with the AWS-managed SNS key.",
+        "alternatives": [
+          "Third-party monitoring (Datadog, PagerDuty) via the same SNS topic"
+        ],
+        "requirements": [
+          "REQ-OPS-003"
+        ]
+      }
+    ],
+    "cost": {
+      "total_monthly_usd": 194.02,
+      "fixed_monthly_usd": 164.97,
+      "variable_monthly_usd": 29.05,
+      "lines": [
+        {
+          "component": "Application servers",
+          "item": "EC2 t4g.medium \u00d7 2 (baseline)",
+          "quantity": 1460.0,
+          "unit": "instance-hours",
+          "unit_price_usd": 0.0336,
+          "monthly_usd": 49.06,
+          "variable": false,
+          "note": "Auto scaling may add up to 4 more instances under load."
+        },
+        {
+          "component": "Application servers",
+          "item": "EBS gp3 root volumes (16 GB each)",
+          "quantity": 32.0,
+          "unit": "GB-month",
+          "unit_price_usd": 0.08,
+          "monthly_usd": 2.56,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Load balancer",
+          "item": "Application Load Balancer",
+          "quantity": 730.0,
+          "unit": "hours",
+          "unit_price_usd": 0.0225,
+          "monthly_usd": 16.43,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Load balancer",
+          "item": "ALB capacity units (~3 LCU average)",
+          "quantity": 2190.0,
+          "unit": "LCU-hours",
+          "unit_price_usd": 0.008,
+          "monthly_usd": 17.52,
+          "variable": true,
+          "note": "Depends on connections, requests and bytes processed."
+        },
+        {
+          "component": "Networking",
+          "item": "Public IPv4 addresses (3)",
+          "quantity": 2190.0,
+          "unit": "address-hours",
+          "unit_price_usd": 0.005,
+          "monthly_usd": 10.95,
+          "variable": false,
+          "note": "AWS charges for every public IPv4 address, including those used by load balancers and NAT gateways."
+        },
+        {
+          "component": "Networking",
+          "item": "NAT gateway \u00d7 1",
+          "quantity": 730.0,
+          "unit": "hours",
+          "unit_price_usd": 0.045,
+          "monthly_usd": 32.85,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Networking",
+          "item": "NAT data processing (~50 GB)",
+          "quantity": 50.0,
+          "unit": "GB",
+          "unit_price_usd": 0.045,
+          "monthly_usd": 2.25,
+          "variable": true,
+          "note": ""
+        },
+        {
+          "component": "Data transfer",
+          "item": "Internet egress (~150 GB, first 100 GB/month free tier)",
+          "quantity": 50.0,
+          "unit": "GB",
+          "unit_price_usd": 0.09,
+          "monthly_usd": 4.5,
+          "variable": true,
+          "note": "The 100 GB monthly free egress allowance is shared across the AWS account."
+        },
+        {
+          "component": "Database",
+          "item": "RDS PostgreSQL db.t4g.small Multi-AZ",
+          "quantity": 1460.0,
+          "unit": "instance-hours",
+          "unit_price_usd": 0.032,
+          "monthly_usd": 46.72,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Database",
+          "item": "RDS gp3 storage (20 GB \u00d72 Multi-AZ)",
+          "quantity": 40.0,
+          "unit": "GB-month",
+          "unit_price_usd": 0.115,
+          "monthly_usd": 4.6,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Database",
+          "item": "Secrets Manager secret (RDS-managed master password)",
+          "quantity": 1.0,
+          "unit": "secret-month",
+          "unit_price_usd": 0.4,
+          "monthly_usd": 0.4,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Logging",
+          "item": "VPC flow logs delivered to S3 (~5 GB)",
+          "quantity": 5.0,
+          "unit": "GB",
+          "unit_price_usd": 0.25,
+          "monthly_usd": 1.25,
+          "variable": true,
+          "note": ""
+        },
+        {
+          "component": "Logging",
+          "item": "S3 log storage (~60 GB retained for 90 days)",
+          "quantity": 60.0,
+          "unit": "GB-month",
+          "unit_price_usd": 0.023,
+          "monthly_usd": 1.38,
+          "variable": true,
+          "note": "About 20 GB of new logs per month, expired after 90 days (steady state)."
+        },
+        {
+          "component": "Logging",
+          "item": "CloudWatch Logs ingestion for exported PostgreSQL logs (~2 GB)",
+          "quantity": 2.0,
+          "unit": "GB",
+          "unit_price_usd": 0.5,
+          "monthly_usd": 1.0,
+          "variable": true,
+          "note": ""
+        },
+        {
+          "component": "File storage",
+          "item": "S3 uploads bucket (~50 GB stored)",
+          "quantity": 50.0,
+          "unit": "GB-month",
+          "unit_price_usd": 0.023,
+          "monthly_usd": 1.15,
+          "variable": true,
+          "note": "Depends on how many files users store; request charges are not included."
+        },
+        {
+          "component": "Monitoring",
+          "item": "CloudWatch alarms (4)",
+          "quantity": 4.0,
+          "unit": "alarm-month",
+          "unit_price_usd": 0.1,
+          "monthly_usd": 0.4,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Monitoring",
+          "item": "KMS key for the encrypted alert topic",
+          "quantity": 1.0,
+          "unit": "key-month",
+          "unit_price_usd": 1.0,
+          "monthly_usd": 1.0,
+          "variable": false,
+          "note": ""
+        },
+        {
+          "component": "Monitoring",
+          "item": "SNS email notifications",
+          "quantity": 1.0,
+          "unit": "topic",
+          "unit_price_usd": 0.0,
+          "monthly_usd": 0.0,
+          "variable": false,
+          "note": "The first 1,000 email notifications each month are free."
+        },
+        {
+          "component": "Audit",
+          "item": "CloudTrail management events (first trail copy)",
+          "quantity": 1.0,
+          "unit": "trail",
+          "unit_price_usd": 0.0,
+          "monthly_usd": 0.0,
+          "variable": false,
+          "note": "The first copy of management events is free; storage is counted under S3."
+        }
+      ],
+      "assumptions": [
+        "On-demand pricing in us-east-1; 730 hours per month; no Savings Plans, Reserved Instances or free-tier credits applied (except the 100 GB egress allowance).",
+        "Traffic profile 'moderate': ~10\u2013100 requests/second.",
+        "Auto scaling runs at its desired capacity of 2 instance(s) on average.",
+        "AWS-managed KMS keys are used for encryption (plus one customer-managed key for the alert topic, included above).",
+        "Taxes, support plans, domain registration and ACM certificates (free for public certificates) are not included."
+      ],
+      "variable_charges": [
+        "Data transfer out to the internet",
+        "Load balancer capacity units (LCUs)",
+        "NAT gateway data processing",
+        "Log volume (flow logs, access logs, CloudWatch Logs)",
+        "Additional instances launched by auto scaling"
+      ],
+      "top_drivers": [
+        "Database: $52/month",
+        "Application servers: $52/month",
+        "Networking: $46/month"
+      ],
+      "pricing_source": "Static table of AWS public on-demand list prices (us-east-1, Linux), curated by the project maintainers; not retrieved live",
+      "pricing_as_of": "price table v1 \u2014 compiled from AWS published rates as of 2025; verify with the AWS Pricing Calculator",
+      "approximate": true,
+      "budget_usd": 400.0,
+      "within_budget": true,
+      "budget_note": "Estimated $194/month against a $400 budget ($206 headroom). Variable charges can exceed this estimate."
+    },
+    "tradeoffs": {
+      "security": {
+        "score": 4,
+        "note": "Servers in private subnets with no public IPs."
+      },
+      "availability": {
+        "score": 4,
+        "note": "Multi-AZ database and servers in two AZs; single NAT is an egress single point of failure."
+      },
+      "cost": {
+        "score": 3,
+        "note": "Multi-AZ doubles database cost; one NAT gateway."
+      },
+      "complexity": {
+        "score": 4,
+        "note": "Standard three-tier layout."
+      },
+      "operations": {
+        "score": 4,
+        "note": "Automatic database failover."
+      }
+    },
+    "satisfies": [
+      "REQ-AUD-001",
+      "REQ-AUD-002",
+      "REQ-AUD-003",
+      "REQ-AVL-001",
+      "REQ-AVL-003",
+      "REQ-CST-001",
+      "REQ-NET-001",
+      "REQ-OPS-001",
+      "REQ-OPS-002",
+      "REQ-OPS-003",
+      "REQ-PRF-001",
+      "REQ-SEC-001",
+      "REQ-SEC-002",
+      "REQ-SEC-003",
+      "REQ-SEC-004",
+      "REQ-SEC-005",
+      "REQ-SEC-006",
+      "REQ-SEC-007",
+      "REQ-SEC-008",
+      "REQ-SEC-010"
+    ],
+    "violates": []
+  },
+  "latest_scan": {
+    "id": "6de225d9d528480dbc5d89aaf0536e98",
+    "at": "2026-10-29T06:26:47.909271+00:00",
+    "status": "passed",
+    "config_sha256": "1b4f6524d7339314758bcac581bb0dedbacb3502bd7695c0361dd5bfb9188b3c",
+    "summary": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "passed": 39,
+      "not_applicable": 5,
+      "external_advisories": 27,
+      "blocking": false,
+      "blocking_reason": ""
+    },
+    "steps": [
+      {
+        "name": "Validate requirements specification",
+        "status": "passed",
+        "summary": "20 requirements (revision 1); 7 assumptions; 2 unresolved items",
+        "started_at": "2026-10-29T06:26:37.200405Z",
+        "finished_at": "2026-10-29T06:26:37.200406Z",
+        "output": ""
+      },
+      {
+        "name": "Validate architecture specification",
+        "status": "passed",
+        "summary": "Option 'Balanced' with 19 components; estimated $194/month.",
+        "started_at": "2026-10-29T06:26:37.201113Z",
+        "finished_at": "2026-10-29T06:26:37.201114Z",
+        "output": ""
+      },
+      {
+        "name": "Write configuration",
+        "status": "passed",
+        "summary": "12 Terraform files written (no manual edits); config sha256 1b4f6524d733\u2026",
+        "started_at": "2026-10-29T06:26:37.206829Z",
+        "finished_at": "2026-10-29T06:26:37.206830Z",
+        "output": ""
+      },
+      {
+        "name": "Configuration safety gate",
+        "status": "passed",
+        "summary": "No provisioners, external/http data sources, modules, backends or filesystem functions.",
+        "started_at": "2026-10-29T06:26:37.209606Z",
+        "finished_at": "2026-10-29T06:26:37.209606Z",
+        "output": ""
+      },
+      {
+        "name": "terraform fmt",
+        "status": "passed",
+        "summary": "Formatting is canonical.",
+        "started_at": "2026-10-29T06:26:37.210012Z",
+        "finished_at": "2026-10-29T06:26:37.253932Z",
+        "output": ""
+      },
+      {
+        "name": "terraform init",
+        "status": "passed",
+        "summary": "Providers installed from the lock file / plugin cache (no upgrade).",
+        "started_at": "2026-10-29T06:26:37.255341Z",
+        "finished_at": "2026-10-29T06:26:39.592514Z",
+        "output": "Initializing the backend...\n\nInitializing provider plugins...\n- Reusing version 6.71.0 of hashicorp/aws from the dependency lock file\n- Using previously-installed hashicorp/aws v6.71.0\n\nTerraform has been successfully initialized!"
+      },
+      {
+        "name": "terraform validate",
+        "status": "passed",
+        "summary": "Configuration is syntactically valid and internally consistent.",
+        "started_at": "2026-10-29T06:26:40.010162Z",
+        "finished_at": "2026-10-29T06:26:41.680848Z",
+        "output": ""
+      },
+      {
+        "name": "terraform plan",
+        "status": "passed",
+        "summary": "SIMULATION plan (placeholder credentials, no AWS API calls). Saved plan b83654a7.",
+        "started_at": "2026-10-29T06:26:41.683678Z",
+        "finished_at": "2026-10-29T06:26:44.916550Z",
+        "output": "  # aws_autoscaling_group.app will be created\n  # aws_autoscaling_policy.cpu_target will be created\n  # aws_cloudtrail.main will be created\n  # aws_cloudwatch_log_group.postgresql will be created\n  # aws_cloudwatch_metric_alarm.alb_5xx will be created\n  # aws_cloudwatch_metric_alarm.db_cpu will be created\n  # aws_cloudwatch_metric_alarm.db_free_storage will be created\n  # aws_cloudwatch_metric_alarm.unhealthy_hosts will be created\n  # aws_db_instance.main will be created\n  # aws_db_parameter_group.main will be created\n  # aws_db_subnet_group.main will be created\n  # aws_default_security_group.default will be created\n  # aws_eip.nat[0] will be created\n  # aws_flow_log.vpc will be created\n  # aws_iam_instance_profile.app will be created\n  # aws_iam_role.app will be created\n  # aws_iam_role_policy.app_read_db_secret will be created\n  # aws_iam_role_policy.app_uploads will be created\n  # aws_iam_role_policy_attachment.app_ssm will be created\n  # aws_internet_gateway.main will be created\n  # aws_kms_alias.alerts will be created\n  # aws_kms_key.alerts will be created\n  # aws_launch_template.app will be created\n  # aws_lb.app will be created\n  # aws_lb_listener.http_redirect will be created\n  # aws_lb_listener.https will be created\n  # aws_lb_target_group.app will be created\n  # aws_nat_gateway.main[0] will be created\n  # aws_route_table.app[0] will be created\n  # aws_route_table.app[1] will be created\n  # aws_route_table.data will be created\n  # aws_route_table.public will be created\n  # aws_route_table_association.app[0] will be created\n  # aws_route_table_association.app[1] will be created\n  # aws_route_table_association.data[0] will be created\n  # aws_route_table_association.data[1] will be created\n  # aws_route_table_association.public[0] will be created\n  # aws_route_table_association.public[1] will be created\n  # aws_s3_bucket.logs will be created\n  # aws_s3_bucket.uploads will be created\n  # aws_s3_bucket_lifecycle_configuration.logs will be created\n  # aws_s3_bucket_lifecycle_configuration.uploads will be created\n  # aws_s3_bucket_ownership_controls.logs will be created\n  # aws_s3_bucket_ownership_controls.uploads will be created\n  # aws_s3_bucket_policy.logs will be created\n  # aws_s3_bucket_policy.uploads will be created\n  # aws_s3_bucket_public_access_block.logs will be created\n  # aws_s3_bucket_public_access_block.uploads will be created\n  # aws_s3_bucket_server_side_encryption_configuration.logs will be created\n  # aws_s3_bucket_server_side_encryption_configuration.uploads will be created\n  # aws_s3_bucket_versioning.logs will be created\n  # aws_s3_bucket_versioning.uploads will be created\n  # aws_security_group.alb will be created\n  # aws_security_group.app will be created\n  # aws_security_group.db will be created\n  # aws_sns_topic.alerts will be created\n  # aws_sns_topic_policy.alerts will be created\n  # aws_sns_topic_subscription.email will be created\n  # aws_subnet.app[0] will be created\n  # aws_subnet.app[1] will be created\n  # aws_subnet.data[0] will be created\n  # aws_subnet.data[1] will be created\n  # aws_subnet.public[0] will be created\n  # aws_subnet.public[1] will be created\n  # aws_vpc.main will be created\n  # aws_vpc_security_group_egress_rule.alb_to_app will be created\n  # aws_vpc_security_group_egress_rule.app_https_out will be created\n  # aws_vpc_security_group_egress_rule.app_to_db will be created\n  # aws_vpc_security_group_ingress_rule.alb_http will be created\n  # aws_vpc_security_group_ingress_rule.alb_https will be created\n  # aws_vpc_security_group_ingress_rule.app_from_alb will be created\n  # aws_vpc_security_group_ingress_rule.db_from_app will be created\nPlan: 72 to add, 0 to change, 0 to destroy."
+      },
+      {
+        "name": "Checkov scan",
+        "status": "warning",
+        "summary": "167 checks passed, 17 advisory findings (not gating).",
+        "started_at": null,
+        "finished_at": null,
+        "output": ""
+      },
+      {
+        "name": "Trivy config scan",
+        "status": "warning",
+        "summary": "10 advisory findings (not gating).",
+        "started_at": null,
+        "finished_at": null,
+        "output": ""
+      },
+      {
+        "name": "Policy evaluation",
+        "status": "passed",
+        "summary": "39 checks passed, 0 non-blocking finding(s) (profile: standard).",
+        "started_at": "2026-10-29T06:26:44.918107Z",
+        "finished_at": "2026-10-29T06:26:47.900926Z",
+        "output": ""
+      },
+      {
+        "name": "Cost estimate",
+        "status": "passed",
+        "summary": "~$194/month (approximate, static price table). Estimated $194/month against a $400 budget ($206 headroom). Variable charges can exceed this estimate.",
+        "started_at": "2026-10-29T06:26:47.901382Z",
+        "finished_at": "2026-10-29T06:26:47.901383Z",
+        "output": ""
+      },
+      {
+        "name": "Plan review",
+        "status": "passed",
+        "summary": "Plan: 72 to create",
+        "started_at": "2026-10-29T06:26:47.902575Z",
+        "finished_at": "2026-10-29T06:26:47.902576Z",
+        "output": ""
+      }
+    ],
+    "policy_results": [
+      {
+        "policy_id": "POL-RDS-001",
+        "title": "Database is not publicly accessible",
+        "severity": "critical",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_db_instance.main",
+        "attribute": "publicly_accessible",
+        "message": "Database is not publicly accessible.",
+        "expected": false,
+        "actual": false,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-001"
+        ]
+      },
+      {
+        "policy_id": "POL-RDS-002",
+        "title": "Database storage encrypted at rest",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_db_instance.main",
+        "attribute": "storage_encrypted",
+        "message": "Storage encryption is enabled.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-002"
+        ]
+      },
+      {
+        "policy_id": "POL-RDS-003",
+        "title": "Automated backups meet retention requirement",
+        "severity": "medium",
+        "category": "availability",
+        "outcome": "pass",
+        "resource": "aws_db_instance.main",
+        "attribute": "backup_retention_period",
+        "message": "Automated backups retained for 7 day(s); requirement is at least 7.",
+        "expected": ">= 7",
+        "actual": 7,
+        "remediation": "",
+        "requirements": [
+          "REQ-AVL-003"
+        ]
+      },
+      {
+        "policy_id": "POL-RDS-004",
+        "title": "Production database protected from deletion",
+        "severity": "high",
+        "category": "operational",
+        "outcome": "pass",
+        "resource": "aws_db_instance.main",
+        "attribute": "deletion_protection",
+        "message": "Deletion protection is on and a final snapshot is taken on deletion.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": [
+          "REQ-OPS-001"
+        ]
+      },
+      {
+        "policy_id": "POL-RDS-005",
+        "title": "Database credentials not stored in configuration",
+        "severity": "high",
+        "category": "secrets",
+        "outcome": "pass",
+        "resource": "aws_db_instance.main",
+        "attribute": "manage_master_user_password",
+        "message": "Master password is generated and rotated by RDS in AWS Secrets Manager.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-006"
+        ]
+      },
+      {
+        "policy_id": "POL-RDS-006",
+        "title": "Database enforces TLS connections",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_db_instance.main",
+        "attribute": "parameter_group_name",
+        "message": "Database parameter group enforces TLS connections (rds.force_ssl = 1).",
+        "expected": "parameter group with rds.force_ssl = 1",
+        "actual": [
+          "aws_db_parameter_group.main"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-003"
+        ]
+      },
+      {
+        "policy_id": "POL-NET-001",
+        "title": "Database placed in private subnets",
+        "severity": "critical",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_db_subnet_group.main",
+        "attribute": "subnet_ids",
+        "message": "Database subnets aws_subnet.data have no route to an internet gateway.",
+        "expected": "private subnets only",
+        "actual": [
+          "aws_subnet.data"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-001"
+        ]
+      },
+      {
+        "policy_id": "POL-SG-001",
+        "title": "No internet ingress to administrative or database ports",
+        "severity": "critical",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_vpc_security_group_ingress_rule.alb_http",
+        "attribute": "cidr",
+        "message": "Internet ingress on port 80 is limited to the internet-facing load balancer.",
+        "expected": null,
+        "actual": [
+          "0.0.0.0/0"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-004"
+        ]
+      },
+      {
+        "policy_id": "POL-SG-001",
+        "title": "No internet ingress to administrative or database ports",
+        "severity": "critical",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_vpc_security_group_ingress_rule.alb_https",
+        "attribute": "cidr",
+        "message": "Internet ingress on port 443 is limited to the internet-facing load balancer.",
+        "expected": null,
+        "actual": [
+          "0.0.0.0/0"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-004"
+        ]
+      },
+      {
+        "policy_id": "POL-SG-002",
+        "title": "Database reachable only from the application tier",
+        "severity": "critical",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_vpc_security_group_ingress_rule.db_from_app",
+        "attribute": "referenced_security_group_id",
+        "message": "Database accepts connections only from the application security group ['aws_security_group.app'].",
+        "expected": [
+          "aws_security_group.app"
+        ],
+        "actual": [
+          "aws_security_group.app"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-001"
+        ]
+      },
+      {
+        "policy_id": "POL-SG-003",
+        "title": "Application servers reachable only through the load balancer",
+        "severity": "critical",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_vpc_security_group_ingress_rule.app_from_alb",
+        "attribute": "referenced_security_group_id",
+        "message": "Application servers accept traffic only from the load balancer.",
+        "expected": [
+          "aws_security_group.alb"
+        ],
+        "actual": [
+          "aws_security_group.alb"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-NET-001"
+        ]
+      },
+      {
+        "policy_id": "POL-SG-004",
+        "title": "Default security group restricts all traffic",
+        "severity": "low",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_default_security_group.default",
+        "attribute": "ingress/egress",
+        "message": "Default security group denies all traffic.",
+        "expected": [],
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-004"
+        ]
+      },
+      {
+        "policy_id": "POL-IAM-001",
+        "title": "IAM policies follow least privilege",
+        "severity": "critical",
+        "category": "iam",
+        "outcome": "pass",
+        "resource": "aws_iam_role_policy.app_read_db_secret",
+        "attribute": "policy",
+        "message": "Policy grants specific actions only.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-005",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-IAM-001",
+        "title": "IAM policies follow least privilege",
+        "severity": "critical",
+        "category": "iam",
+        "outcome": "pass",
+        "resource": "aws_iam_role_policy.app_uploads",
+        "attribute": "policy",
+        "message": "Policy grants specific actions only.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-005",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-IAM-002",
+        "title": "No administrator policies attached",
+        "severity": "critical",
+        "category": "iam",
+        "outcome": "pass",
+        "resource": "aws_iam_role_policy_attachment.app_ssm",
+        "attribute": "policy_arn",
+        "message": "Attaches arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore.",
+        "expected": "not an administrator policy",
+        "actual": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-005"
+        ]
+      },
+      {
+        "policy_id": "POL-IAM-003",
+        "title": "No IAM users or long-lived access keys",
+        "severity": "high",
+        "category": "iam",
+        "outcome": "pass",
+        "resource": null,
+        "attribute": null,
+        "message": "No IAM users or long-lived access keys are created.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-005"
+        ]
+      },
+      {
+        "policy_id": "POL-EC2-001",
+        "title": "Instance metadata service v2 required",
+        "severity": "high",
+        "category": "compute",
+        "outcome": "pass",
+        "resource": "aws_launch_template.app",
+        "attribute": "metadata_options.http_tokens",
+        "message": "Instance metadata requires session tokens (IMDSv2).",
+        "expected": "required",
+        "actual": "required",
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-007"
+        ]
+      },
+      {
+        "policy_id": "POL-EC2-002",
+        "title": "Application servers have no public IP addresses",
+        "severity": "high",
+        "category": "network",
+        "outcome": "not_applicable",
+        "resource": null,
+        "attribute": null,
+        "message": "Not required by this project's requirements or policy profile.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": []
+      },
+      {
+        "policy_id": "POL-EC2-003",
+        "title": "Instance storage encrypted",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_launch_template.app",
+        "attribute": "block_device_mappings.ebs.encrypted",
+        "message": "Volume /dev/xvda encrypted.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-002"
+        ]
+      },
+      {
+        "policy_id": "POL-S3-001",
+        "title": "S3 buckets are not public",
+        "severity": "high",
+        "category": "storage",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket_public_access_block.logs",
+        "attribute": "public_access_block",
+        "message": "All four public access block settings are enabled.",
+        "expected": {
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        },
+        "actual": {
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        },
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-008",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-S3-001",
+        "title": "S3 buckets are not public",
+        "severity": "high",
+        "category": "storage",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket_public_access_block.uploads",
+        "attribute": "public_access_block",
+        "message": "All four public access block settings are enabled.",
+        "expected": {
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        },
+        "actual": {
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        },
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-008",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-S3-002",
+        "title": "S3 default encryption configured",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket.logs",
+        "attribute": "server_side_encryption_configuration",
+        "message": "Default encryption AES256 configured explicitly.",
+        "expected": "AES256 or aws:kms",
+        "actual": [
+          "AES256"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-002",
+          "REQ-SEC-008",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-S3-002",
+        "title": "S3 default encryption configured",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket.uploads",
+        "attribute": "server_side_encryption_configuration",
+        "message": "Default encryption AES256 configured explicitly.",
+        "expected": "AES256 or aws:kms",
+        "actual": [
+          "AES256"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-002",
+          "REQ-SEC-008",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-S3-003",
+        "title": "Log bucket versioning enabled",
+        "severity": "low",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket.logs",
+        "attribute": "versioning",
+        "message": "Versioning enabled, protecting log objects from overwrite.",
+        "expected": "Enabled",
+        "actual": [
+          "Enabled"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-008",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-S3-003",
+        "title": "Log bucket versioning enabled",
+        "severity": "low",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket.uploads",
+        "attribute": "versioning",
+        "message": "Versioning enabled, protecting log objects from overwrite.",
+        "expected": "Enabled",
+        "actual": [
+          "Enabled"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-008",
+          "REQ-SEC-010"
+        ]
+      },
+      {
+        "policy_id": "POL-ALB-001",
+        "title": "HTTPS with modern TLS on internet-facing load balancers",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_lb_listener.https",
+        "attribute": "ssl_policy",
+        "message": "HTTPS listener uses ELBSecurityPolicy-TLS13-1-2-2021-06.",
+        "expected": "TLS 1.2+ policy",
+        "actual": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-003"
+        ]
+      },
+      {
+        "policy_id": "POL-ALB-002",
+        "title": "HTTP redirects to HTTPS",
+        "severity": "high",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_lb_listener.http_redirect",
+        "attribute": "default_action",
+        "message": "HTTP requests are redirected to HTTPS.",
+        "expected": "redirect to HTTPS",
+        "actual": "redirect",
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-003"
+        ]
+      },
+      {
+        "policy_id": "POL-ALB-003",
+        "title": "Load balancer drops invalid headers",
+        "severity": "medium",
+        "category": "network",
+        "outcome": "pass",
+        "resource": "aws_lb.app",
+        "attribute": "drop_invalid_header_fields",
+        "message": "Invalid HTTP headers are dropped.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": []
+      },
+      {
+        "policy_id": "POL-LOG-001",
+        "title": "CloudTrail audit trail enabled",
+        "severity": "high",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_cloudtrail.main",
+        "attribute": "is_multi_region_trail/enable_log_file_validation",
+        "message": "Multi-region trail with tamper-evident log validation.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": [
+          "REQ-AUD-001"
+        ]
+      },
+      {
+        "policy_id": "POL-LOG-002",
+        "title": "VPC flow logs enabled",
+        "severity": "medium",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_vpc.main",
+        "attribute": "aws_flow_log",
+        "message": "VPC flow logs capture all traffic.",
+        "expected": "traffic_type ALL",
+        "actual": [
+          "ALL"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-AUD-002"
+        ]
+      },
+      {
+        "policy_id": "POL-LOG-003",
+        "title": "Load balancer access logs enabled",
+        "severity": "medium",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_lb.app",
+        "attribute": "access_logs.enabled",
+        "message": "Access logs delivered to S3.",
+        "expected": true,
+        "actual": true,
+        "remediation": "",
+        "requirements": [
+          "REQ-AUD-002"
+        ]
+      },
+      {
+        "policy_id": "POL-AVL-001",
+        "title": "Application tolerates instance and zone failure",
+        "severity": "high",
+        "category": "availability",
+        "outcome": "pass",
+        "resource": "aws_autoscaling_group.app",
+        "attribute": "min_size/vpc_zone_identifier/health_check_type",
+        "message": "At least 2 instance(s) across 2 subnets with load balancer health checks.",
+        "expected": {
+          "min_size": ">= 2",
+          "subnets": ">= 2",
+          "health_check_type": "ELB"
+        },
+        "actual": {
+          "min_size": 2,
+          "subnets": 2,
+          "health_check_type": "ELB"
+        },
+        "remediation": "",
+        "requirements": [
+          "REQ-AVL-001"
+        ]
+      },
+      {
+        "policy_id": "POL-AVL-002",
+        "title": "Database survives an availability-zone failure",
+        "severity": "high",
+        "category": "availability",
+        "outcome": "not_applicable",
+        "resource": null,
+        "attribute": null,
+        "message": "Not required by this project's requirements or policy profile.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": []
+      },
+      {
+        "policy_id": "POL-PRF-001",
+        "title": "Application scales with demand",
+        "severity": "medium",
+        "category": "performance",
+        "outcome": "pass",
+        "resource": "aws_autoscaling_group.app",
+        "attribute": "max_size/aws_autoscaling_policy",
+        "message": "Target-tracking scaling from 2 to 6 instances.",
+        "expected": "max_size > min_size with target tracking",
+        "actual": {
+          "min": 2,
+          "max": 6,
+          "policies": 1
+        },
+        "remediation": "",
+        "requirements": [
+          "REQ-PRF-001"
+        ]
+      },
+      {
+        "policy_id": "POL-WAF-001",
+        "title": "Web application firewall in front of the application",
+        "severity": "high",
+        "category": "network",
+        "outcome": "not_applicable",
+        "resource": null,
+        "attribute": null,
+        "message": "Not required by this project's requirements or policy profile.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": []
+      },
+      {
+        "policy_id": "POL-REG-001",
+        "title": "Resources deployed only in allowed regions",
+        "severity": "critical",
+        "category": "compliance",
+        "outcome": "not_applicable",
+        "resource": null,
+        "attribute": null,
+        "message": "Not required by this project's requirements or policy profile.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": []
+      },
+      {
+        "policy_id": "POL-LOG-004",
+        "title": "Logs kept for the required retention period",
+        "severity": "medium",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_s3_bucket.logs",
+        "attribute": "lifecycle.expiration.days",
+        "message": "Log objects expire after 90 days. Requirement: at least 90 days.",
+        "expected": ">= 90",
+        "actual": 90,
+        "remediation": "",
+        "requirements": [
+          "REQ-AUD-003"
+        ]
+      },
+      {
+        "policy_id": "POL-LOG-004",
+        "title": "Logs kept for the required retention period",
+        "severity": "medium",
+        "category": "logging",
+        "outcome": "pass",
+        "resource": "aws_cloudwatch_log_group.postgresql",
+        "attribute": "retention_in_days",
+        "message": "Log group keeps events for 90 days; requirement is at least 90 days.",
+        "expected": ">= 90 (or 0 = never expire)",
+        "actual": 90,
+        "remediation": "",
+        "requirements": [
+          "REQ-AUD-003"
+        ]
+      },
+      {
+        "policy_id": "POL-OPS-001",
+        "title": "Load balancer alarms notify the team",
+        "severity": "medium",
+        "category": "operational",
+        "outcome": "pass",
+        "resource": "aws_lb.app",
+        "attribute": "aws_cloudwatch_metric_alarm.alarm_actions",
+        "message": "2 alarm(s) on this load balancer notify a subscribed SNS topic.",
+        "expected": "alarm \u2192 SNS topic with a subscription",
+        "actual": [
+          "aws_cloudwatch_metric_alarm.alb_5xx",
+          "aws_cloudwatch_metric_alarm.unhealthy_hosts"
+        ],
+        "remediation": "",
+        "requirements": [
+          "REQ-OPS-003"
+        ]
+      },
+      {
+        "policy_id": "POL-OPS-002",
+        "title": "Alert topic encrypted with a customer-managed key",
+        "severity": "low",
+        "category": "encryption",
+        "outcome": "pass",
+        "resource": "aws_sns_topic.alerts",
+        "attribute": "kms_master_key_id",
+        "message": "Topic encrypted with a customer-managed KMS key.",
+        "expected": "customer-managed KMS key",
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-OPS-003"
+        ]
+      },
+      {
+        "policy_id": "POL-CST-001",
+        "title": "Servers scheduled off outside business hours",
+        "severity": "low",
+        "category": "cost",
+        "outcome": "not_applicable",
+        "resource": null,
+        "attribute": null,
+        "message": "Not required by this project's requirements or policy profile.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": []
+      },
+      {
+        "policy_id": "POL-TAG-001",
+        "title": "Resources tagged for ownership",
+        "severity": "low",
+        "category": "operational",
+        "outcome": "pass",
+        "resource": null,
+        "attribute": null,
+        "message": "All 46 taggable resources carry Project, Environment and ManagedBy tags.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-OPS-002"
+        ]
+      },
+      {
+        "policy_id": "POL-SEC-002",
+        "title": "No credentials embedded in configuration",
+        "severity": "high",
+        "category": "secrets",
+        "outcome": "pass",
+        "resource": null,
+        "attribute": null,
+        "message": "No credential patterns found in user data, tags or environment values.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": [
+          "REQ-SEC-006"
+        ]
+      },
+      {
+        "policy_id": "POL-CHG-001",
+        "title": "No destruction of stateful resources",
+        "severity": "high",
+        "category": "change-safety",
+        "outcome": "pass",
+        "resource": null,
+        "attribute": null,
+        "message": "No stateful resources are destroyed or replaced by this plan.",
+        "expected": null,
+        "actual": null,
+        "remediation": "",
+        "requirements": []
+      }
+    ],
+    "external_findings": [
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_338",
+        "title": "Ensure CloudWatch log groups retains logs for at least 1 year",
+        "severity": "UNRATED",
+        "resource": "aws_cloudwatch_log_group.postgresql",
+        "file": "database.tf",
+        "line": 24,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_158",
+        "title": "Ensure that CloudWatch Log Group is encrypted by KMS",
+        "severity": "UNRATED",
+        "resource": "aws_cloudwatch_log_group.postgresql",
+        "file": "database.tf",
+        "line": 24,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_353",
+        "title": "Ensure that RDS instances have performance insights enabled",
+        "severity": "UNRATED",
+        "resource": "aws_db_instance.main",
+        "file": "database.tf",
+        "line": 29,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_118",
+        "title": "Ensure that enhanced monitoring is enabled for Amazon RDS instances",
+        "severity": "UNRATED",
+        "resource": "aws_db_instance.main",
+        "file": "database.tf",
+        "line": 29,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_252",
+        "title": "Ensure CloudTrail defines an SNS Topic",
+        "severity": "UNRATED",
+        "resource": "aws_cloudtrail.main",
+        "file": "logging.tf",
+        "line": 137,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_35",
+        "title": "Ensure CloudTrail logs are encrypted at rest using KMS CMKs",
+        "severity": "UNRATED",
+        "resource": "aws_cloudtrail.main",
+        "file": "logging.tf",
+        "line": 137,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_260",
+        "title": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80",
+        "severity": "UNRATED",
+        "resource": "aws_vpc_security_group_ingress_rule.alb_http",
+        "file": "security_groups.tf",
+        "line": 23,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV2_AWS_62",
+        "title": "Ensure S3 buckets should have event notifications enabled",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.logs",
+        "file": "logging.tf",
+        "line": 16,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV2_AWS_62",
+        "title": "Ensure S3 buckets should have event notifications enabled",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.uploads",
+        "file": "storage.tf",
+        "line": 4,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV2_AWS_10",
+        "title": "Ensure CloudTrail trails are integrated with CloudWatch Logs",
+        "severity": "UNRATED",
+        "resource": "aws_cloudtrail.main",
+        "file": "logging.tf",
+        "line": 137,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_18",
+        "title": "Ensure the S3 bucket has access logging enabled",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.logs",
+        "file": "logging.tf",
+        "line": 16,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_18",
+        "title": "Ensure the S3 bucket has access logging enabled",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.uploads",
+        "file": "storage.tf",
+        "line": 4,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV2_AWS_28",
+        "title": "Ensure public facing ALB are protected by WAF",
+        "severity": "UNRATED",
+        "resource": "aws_lb.app",
+        "file": "load_balancer.tf",
+        "line": 4,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_144",
+        "title": "Ensure that S3 bucket has cross-region replication enabled",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.logs",
+        "file": "logging.tf",
+        "line": 16,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_144",
+        "title": "Ensure that S3 bucket has cross-region replication enabled",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.uploads",
+        "file": "storage.tf",
+        "line": 4,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_145",
+        "title": "Ensure that S3 buckets are encrypted with KMS by default",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.logs",
+        "file": "logging.tf",
+        "line": 16,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "checkov",
+        "rule_id": "CKV_AWS_145",
+        "title": "Ensure that S3 buckets are encrypted with KMS by default",
+        "severity": "UNRATED",
+        "resource": "aws_s3_bucket.uploads",
+        "file": "storage.tf",
+        "line": 4,
+        "guideline": null,
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0017",
+        "title": "CloudWatch log groups should be encrypted using CMK",
+        "severity": "LOW",
+        "resource": "aws_cloudwatch_log_group.postgresql",
+        "file": "database.tf",
+        "line": 24,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0017",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0133",
+        "title": "Enable Performance Insights to detect potential problems",
+        "severity": "LOW",
+        "resource": "aws_db_instance.main",
+        "file": "database.tf",
+        "line": 29,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0133",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0053",
+        "title": "Load balancer is exposed to the internet.",
+        "severity": "HIGH",
+        "resource": "aws_lb.app",
+        "file": "load_balancer.tf",
+        "line": 6,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0053",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0015",
+        "title": "CloudTrail should use Customer managed keys to encrypt the logs",
+        "severity": "HIGH",
+        "resource": "aws_cloudtrail.main",
+        "file": "logging.tf",
+        "line": 137,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0015",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "severity": "LOW",
+        "resource": "aws_s3_bucket.logs",
+        "file": "logging.tf",
+        "line": 16,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0089",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0132",
+        "title": "S3 encryption should use Customer Managed Keys",
+        "severity": "HIGH",
+        "resource": "aws_s3_bucket_server_side_encryption_configuration.logs",
+        "file": "logging.tf",
+        "line": 39,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0132",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0162",
+        "title": "CloudTrail logs should be stored in S3 and also sent to CloudWatch Logs",
+        "severity": "LOW",
+        "resource": "aws_cloudtrail.main",
+        "file": "logging.tf",
+        "line": 137,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0162",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0104",
+        "title": "A security group rule should not allow unrestricted egress to any IP address.",
+        "severity": "CRITICAL",
+        "resource": "aws_vpc_security_group_egress_rule.app_https_out",
+        "file": "security_groups.tf",
+        "line": 63,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0104",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "severity": "LOW",
+        "resource": "aws_s3_bucket.uploads",
+        "file": "storage.tf",
+        "line": 4,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0089",
+        "advisory": true
+      },
+      {
+        "tool": "trivy",
+        "rule_id": "AWS-0132",
+        "title": "S3 encryption should use Customer Managed Keys",
+        "severity": "HIGH",
+        "resource": "aws_s3_bucket_server_side_encryption_configuration.uploads",
+        "file": "storage.tf",
+        "line": 26,
+        "guideline": "https://avd.aquasec.com/misconfig/aws-0132",
+        "advisory": true
+      }
+    ]
+  },
+  "plans": [
+    {
+      "id": "b83654a7919645b184624537622b9e39",
+      "kind": "apply",
+      "mode": "simulation",
+      "status": "applied",
+      "created_at": "2026-10-29T06:26:41.682185+00:00",
+      "plan_sha256": "3fad6ceb73c5a0be006858178a21038dd53b2679de9ee50eac02c7a0ce5b8e62",
+      "config_sha256": "1b4f6524d7339314758bcac581bb0dedbacb3502bd7695c0361dd5bfb9188b3c",
+      "headline": "Plan: 72 to create",
+      "approval": {
+        "session": "9fa5f014db4c42e0aa10b751ce063af1",
+        "at": "2026-10-29T06:26:48.008945+00:00",
+        "plan_sha256": "3fad6ceb73c5a0be006858178a21038dd53b2679de9ee50eac02c7a0ce5b8e62",
+        "config_sha256": "1b4f6524d7339314758bcac581bb0dedbacb3502bd7695c0361dd5bfb9188b3c",
+        "destructive_acknowledged": false,
+        "mode": "simulation"
+      }
+    },
+    {
+      "id": "45f1fa5790eb470f8459af2764680b96",
+      "kind": "apply",
+      "mode": "simulation",
+      "status": "rejected",
+      "created_at": "2026-10-29T06:26:30.314485+00:00",
+      "plan_sha256": "4da9e2a95e5aa3d7b5b58eaa65a7c6638b2accfd5d1984443282729b05ef0472",
+      "config_sha256": "da391fe4af5f07a17ec52c175f444e118b421b8a0c98dcac05ff938ac8d22360",
+      "headline": "Plan: 73 to create",
+      "approval": null
+    }
+  ],
+  "deployments": [
+    {
+      "id": "d0fd68cf1656468c96d5e610fe522a22",
+      "kind": "apply",
+      "mode": "simulation",
+      "status": "succeeded",
+      "started_at": "2026-10-29T06:26:48.018770+00:00",
+      "finished_at": "2026-10-29T06:27:03.998260+00:00",
+      "resources": [
+        {
+          "address": "aws_autoscaling_group.app",
+          "type": "aws_autoscaling_group",
+          "id": "sim-autoscaling-dd7795b7539cb8a16",
+          "arn": "arn:aws:autoscaling:us-east-1:000000000000:sim/aws_autoscaling_group/e3a361694cc90fa9b",
+          "simulated": true
+        },
+        {
+          "address": "aws_autoscaling_policy.cpu_target",
+          "type": "aws_autoscaling_policy",
+          "id": "sim-autoscaling-ee0eee8dbab08fdff",
+          "arn": "arn:aws:autoscaling:us-east-1:000000000000:sim/aws_autoscaling_policy/47e5f3be4757db3d0",
+          "simulated": true
+        },
+        {
+          "address": "aws_cloudtrail.main",
+          "type": "aws_cloudtrail",
+          "id": "sim-cloudtrail-76a3e115a7caf7ca8",
+          "arn": "arn:aws:cloudtrail:us-east-1:000000000000:sim/aws_cloudtrail/483f3262d05429731",
+          "simulated": true
+        },
+        {
+          "address": "aws_cloudwatch_log_group.postgresql",
+          "type": "aws_cloudwatch_log_group",
+          "id": "sim-cloudwatch-f192c387e8b02d890",
+          "arn": "arn:aws:cloudwatch:us-east-1:000000000000:sim/aws_cloudwatch_log_group/d48b565575ab4bb1b",
+          "simulated": true
+        },
+        {
+          "address": "aws_cloudwatch_metric_alarm.alb_5xx",
+          "type": "aws_cloudwatch_metric_alarm",
+          "id": "sim-cloudwatch-42fdf8c96363c11bb",
+          "arn": "arn:aws:cloudwatch:us-east-1:000000000000:sim/aws_cloudwatch_metric_alarm/91744014b9ec36e7b",
+          "simulated": true
+        },
+        {
+          "address": "aws_cloudwatch_metric_alarm.db_cpu",
+          "type": "aws_cloudwatch_metric_alarm",
+          "id": "sim-cloudwatch-7df80ec5fe5c91d31",
+          "arn": "arn:aws:cloudwatch:us-east-1:000000000000:sim/aws_cloudwatch_metric_alarm/b02b6d9774984ec9c",
+          "simulated": true
+        },
+        {
+          "address": "aws_cloudwatch_metric_alarm.db_free_storage",
+          "type": "aws_cloudwatch_metric_alarm",
+          "id": "sim-cloudwatch-49f6eb796fc78d4d5",
+          "arn": "arn:aws:cloudwatch:us-east-1:000000000000:sim/aws_cloudwatch_metric_alarm/6dcd398ba5c5a4449",
+          "simulated": true
+        },
+        {
+          "address": "aws_cloudwatch_metric_alarm.unhealthy_hosts",
+          "type": "aws_cloudwatch_metric_alarm",
+          "id": "sim-cloudwatch-ca7f4fb83593c02ec",
+          "arn": "arn:aws:cloudwatch:us-east-1:000000000000:sim/aws_cloudwatch_metric_alarm/891d9939f0935628a",
+          "simulated": true
+        },
+        {
+          "address": "aws_db_instance.main",
+          "type": "aws_db_instance",
+          "id": "sim-db-c982ba0942301a30d",
+          "arn": "arn:aws:db:us-east-1:000000000000:sim/aws_db_instance/6ddce5c8a41719860",
+          "simulated": true
+        },
+        {
+          "address": "aws_db_parameter_group.main",
+          "type": "aws_db_parameter_group",
+          "id": "sim-db-dd1d1af04ee33429d",
+          "arn": "arn:aws:db:us-east-1:000000000000:sim/aws_db_parameter_group/ffa40ebd693ca1b4b",
+          "simulated": true
+        },
+        {
+          "address": "aws_db_subnet_group.main",
+          "type": "aws_db_subnet_group",
+          "id": "sim-db-24db0871e126b76d4",
+          "arn": "arn:aws:db:us-east-1:000000000000:sim/aws_db_subnet_group/6f86bbcb4cd744017",
+          "simulated": true
+        },
+        {
+          "address": "aws_default_security_group.default",
+          "type": "aws_default_security_group",
+          "id": "sg-736e5a0dfbc3c30f8",
+          "arn": "arn:aws:default:us-east-1:000000000000:sim/aws_default_security_group/dc55d1121456976b8",
+          "simulated": true
+        },
+        {
+          "address": "aws_eip.nat[0]",
+          "type": "aws_eip",
+          "id": "eipalloc-7d5da7bc8407473c0",
+          "arn": "arn:aws:eip:us-east-1:000000000000:sim/aws_eip/9c0a05cb3bc424b2b",
+          "simulated": true
+        },
+        {
+          "address": "aws_flow_log.vpc",
+          "type": "aws_flow_log",
+          "id": "fl-2eb8e8c9bcf5d86a9",
+          "arn": "arn:aws:flow:us-east-1:000000000000:sim/aws_flow_log/78e5da58e52ac4cb3",
+          "simulated": true
+        },
+        {
+          "address": "aws_iam_instance_profile.app",
+          "type": "aws_iam_instance_profile",
+          "id": "sim-iam-701c5968d903eadcd",
+          "arn": "arn:aws:iam:us-east-1:000000000000:sim/aws_iam_instance_profile/6aae98c7707228a2e",
+          "simulated": true
+        },
+        {
+          "address": "aws_iam_role.app",
+          "type": "aws_iam_role",
+          "id": "sim-iam-0f0ef6ca761020bab",
+          "arn": "arn:aws:iam:us-east-1:000000000000:sim/aws_iam_role/06a6b9b495d3cc4da",
+          "simulated": true
+        },
+        {
+          "address": "aws_iam_role_policy.app_read_db_secret",
+          "type": "aws_iam_role_policy",
+          "id": "sim-iam-8b15402b9017311e7",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_iam_role_policy.app_uploads",
+          "type": "aws_iam_role_policy",
+          "id": "sim-iam-c77a549f4d2c31c82",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_iam_role_policy_attachment.app_ssm",
+          "type": "aws_iam_role_policy_attachment",
+          "id": "sim-iam-3e582b094feedb070",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_internet_gateway.main",
+          "type": "aws_internet_gateway",
+          "id": "igw-db64d8712da69acaa",
+          "arn": "arn:aws:internet:us-east-1:000000000000:sim/aws_internet_gateway/7352f3c849c5f49dc",
+          "simulated": true
+        },
+        {
+          "address": "aws_kms_alias.alerts",
+          "type": "aws_kms_alias",
+          "id": "sim-kms-7345ec4d7a881237c",
+          "arn": "arn:aws:kms:us-east-1:000000000000:sim/aws_kms_alias/77f604d34e4e93239",
+          "simulated": true
+        },
+        {
+          "address": "aws_kms_key.alerts",
+          "type": "aws_kms_key",
+          "id": "sim-kms-f6b4dab4fabe35452",
+          "arn": "arn:aws:kms:us-east-1:000000000000:sim/aws_kms_key/68d82aff58151cde6",
+          "simulated": true
+        },
+        {
+          "address": "aws_launch_template.app",
+          "type": "aws_launch_template",
+          "id": "lt-afe9b00f0a1ad83b8",
+          "arn": "arn:aws:launch:us-east-1:000000000000:sim/aws_launch_template/176076e0eb60fdccc",
+          "simulated": true
+        },
+        {
+          "address": "aws_lb.app",
+          "type": "aws_lb",
+          "id": "sim-lb-fc92b3d7816ba970d",
+          "arn": "arn:aws:lb:us-east-1:000000000000:sim/aws_lb/79635b8ec13678bdf",
+          "simulated": true
+        },
+        {
+          "address": "aws_lb_listener.http_redirect",
+          "type": "aws_lb_listener",
+          "id": "sim-lb-59f8116263b10635d",
+          "arn": "arn:aws:lb:us-east-1:000000000000:sim/aws_lb_listener/73cfc87c385582230",
+          "simulated": true
+        },
+        {
+          "address": "aws_lb_listener.https",
+          "type": "aws_lb_listener",
+          "id": "sim-lb-d3e774ceb6903419f",
+          "arn": "arn:aws:lb:us-east-1:000000000000:sim/aws_lb_listener/7db38989f81406e23",
+          "simulated": true
+        },
+        {
+          "address": "aws_lb_target_group.app",
+          "type": "aws_lb_target_group",
+          "id": "sim-lb-6ee80f7d9e6567d27",
+          "arn": "arn:aws:lb:us-east-1:000000000000:sim/aws_lb_target_group/024a206dbcf04c389",
+          "simulated": true
+        },
+        {
+          "address": "aws_nat_gateway.main[0]",
+          "type": "aws_nat_gateway",
+          "id": "nat-11254f69cfdd3a89e",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table.app[0]",
+          "type": "aws_route_table",
+          "id": "rtb-6d02b5fb50fc486c9",
+          "arn": "arn:aws:route:us-east-1:000000000000:sim/aws_route_table/5572fb1fd3efa6d61",
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table.app[1]",
+          "type": "aws_route_table",
+          "id": "rtb-00e8a1277862b11cf",
+          "arn": "arn:aws:route:us-east-1:000000000000:sim/aws_route_table/f68eeaf0420ab020c",
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table.data",
+          "type": "aws_route_table",
+          "id": "rtb-08d97de0056226e35",
+          "arn": "arn:aws:route:us-east-1:000000000000:sim/aws_route_table/c504b08bc03210c08",
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table.public",
+          "type": "aws_route_table",
+          "id": "rtb-183b7e222139c69a4",
+          "arn": "arn:aws:route:us-east-1:000000000000:sim/aws_route_table/521a78548321ec36a",
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table_association.app[0]",
+          "type": "aws_route_table_association",
+          "id": "rtbassoc-bb1c966f4e410b565",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table_association.app[1]",
+          "type": "aws_route_table_association",
+          "id": "rtbassoc-ea2b329574e3346e1",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table_association.data[0]",
+          "type": "aws_route_table_association",
+          "id": "rtbassoc-039a427bc13af5969",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table_association.data[1]",
+          "type": "aws_route_table_association",
+          "id": "rtbassoc-d7399a0c2e499c0fc",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table_association.public[0]",
+          "type": "aws_route_table_association",
+          "id": "rtbassoc-4e69f1bcc446abda3",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_route_table_association.public[1]",
+          "type": "aws_route_table_association",
+          "id": "rtbassoc-a6733d00862390fd6",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket.logs",
+          "type": "aws_s3_bucket",
+          "id": "sim-s3-daa618d826649b0d8",
+          "arn": "arn:aws:s3:us-east-1:000000000000:sim/aws_s3_bucket/ab22529e1c4d74ca3",
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket.uploads",
+          "type": "aws_s3_bucket",
+          "id": "sim-s3-89fd46c4d54f9962c",
+          "arn": "arn:aws:s3:us-east-1:000000000000:sim/aws_s3_bucket/334c7002ea75628d3",
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_lifecycle_configuration.logs",
+          "type": "aws_s3_bucket_lifecycle_configuration",
+          "id": "sim-s3-0ac2479698d7d4189",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_lifecycle_configuration.uploads",
+          "type": "aws_s3_bucket_lifecycle_configuration",
+          "id": "sim-s3-f8b21e078af592782",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_ownership_controls.logs",
+          "type": "aws_s3_bucket_ownership_controls",
+          "id": "sim-s3-d5c24d32a54ce1910",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_ownership_controls.uploads",
+          "type": "aws_s3_bucket_ownership_controls",
+          "id": "sim-s3-b6fa39c194aaa497c",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_policy.logs",
+          "type": "aws_s3_bucket_policy",
+          "id": "sim-s3-85d7a9e902fe97579",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_policy.uploads",
+          "type": "aws_s3_bucket_policy",
+          "id": "sim-s3-021bb977f2bd170a8",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_public_access_block.logs",
+          "type": "aws_s3_bucket_public_access_block",
+          "id": "sim-s3-09779050a11fa6e2a",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_public_access_block.uploads",
+          "type": "aws_s3_bucket_public_access_block",
+          "id": "sim-s3-ea2081a29e9fef2c5",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_server_side_encryption_configuration.logs",
+          "type": "aws_s3_bucket_server_side_encryption_configuration",
+          "id": "sim-s3-90cf769efba04b9a0",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_server_side_encryption_configuration.uploads",
+          "type": "aws_s3_bucket_server_side_encryption_configuration",
+          "id": "sim-s3-91f7c6eb93362cb1f",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_versioning.logs",
+          "type": "aws_s3_bucket_versioning",
+          "id": "sim-s3-ddc856548dcdf7967",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_s3_bucket_versioning.uploads",
+          "type": "aws_s3_bucket_versioning",
+          "id": "sim-s3-2171f8f505b0abd19",
+          "arn": null,
+          "simulated": true
+        },
+        {
+          "address": "aws_security_group.alb",
+          "type": "aws_security_group",
+          "id": "sg-6e8b6faeaa730972a",
+          "arn": "arn:aws:security:us-east-1:000000000000:sim/aws_security_group/6f77196f039b297be",
+          "simulated": true
+        },
+        {
+          "address": "aws_security_group.app",
+          "type": "aws_security_group",
+          "id": "sg-f2bbb96e25c5c2d86",
+          "arn": "arn:aws:security:us-east-1:000000000000:sim/aws_security_group/a092767c27ee31ea1",
+          "simulated": true
+        },
+        {
+          "address": "aws_security_group.db",
+          "type": "aws_security_group",
+          "id": "sg-421cf3538e0035874",
+          "arn": "arn:aws:security:us-east-1:000000000000:sim/aws_security_group/b931900cd1eccbfb2",
+          "simulated": true
+        },
+        {
+          "address": "aws_sns_topic.alerts",
+          "type": "aws_sns_topic",
+          "id": "sim-sns-0aecce7900350686a",
+          "arn": "arn:aws:sns:us-east-1:000000000000:sim/aws_sns_topic/50bf2e0ca7e265c3a",
+          "simulated": true
+        },
+        {
+          "address": "aws_sns_topic_policy.alerts",
+          "type": "aws_sns_topic_policy",
+          "id": "sim-sns-e7e6305ed348f2db1",
+          "arn": "arn:aws:sns:us-east-1:000000000000:sim/aws_sns_topic/50bf2e0ca7e265c3a",
+          "simulated": true
+        },
+        {
+          "address": "aws_sns_topic_subscription.email",
+          "type": "aws_sns_topic_subscription",
+          "id": "sim-sns-c1ec5993568c308ee",
+          "arn": "arn:aws:sns:us-east-1:000000000000:sim/aws_sns_topic_subscription/0e491e262400e1e15",
+          "simulated": true
+        },
+        {
+          "address": "aws_subnet.app[0]",
+          "type": "aws_subnet",
+          "id": "subnet-91ed8caea93677fc8",
+          "arn": "arn:aws:subnet:us-east-1:000000000000:sim/aws_subnet/f6fdd043428a575ef",
+          "simulated": true
+        },
+        {
+          "address": "aws_subnet.app[1]",
+          "type": "aws_subnet",
+          "id": "subnet-7bf66d3e345959af9",
+          "arn": "arn:aws:subnet:us-east-1:000000000000:sim/aws_subnet/7866d542a598d48d3",
+          "simulated": true
+        },
+        {
+          "address": "aws_subnet.data[0]",
+          "type": "aws_subnet",
+          "id": "subnet-9d23ac180ec252bc3",
+          "arn": "arn:aws:subnet:us-east-1:000000000000:sim/aws_subnet/61ef42e482b050305",
+          "simulated": true
+        },
+        {
+          "address": "aws_subnet.data[1]",
+          "type": "aws_subnet",
+          "id": "subnet-0349390862bb64b65",
+          "arn": "arn:aws:subnet:us-east-1:000000000000:sim/aws_subnet/e7f934458a51db8c8",
+          "simulated": true
+        },
+        {
+          "address": "aws_subnet.public[0]",
+          "type": "aws_subnet",
+          "id": "subnet-466f7a18f0e2d8495",
+          "arn": "arn:aws:subnet:us-east-1:000000000000:sim/aws_subnet/2338314afde304879",
+          "simulated": true
+        },
+        {
+          "address": "aws_subnet.public[1]",
+          "type": "aws_subnet",
+          "id": "subnet-640935a86c599389a",
+          "arn": "arn:aws:subnet:us-east-1:000000000000:sim/aws_subnet/bd2ae4c729563a583",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc.main",
+          "type": "aws_vpc",
+          "id": "vpc-e564307b93b2d281c",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc/0a4f377d908ce022e",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_egress_rule.alb_to_app",
+          "type": "aws_vpc_security_group_egress_rule",
+          "id": "sgr-65b8bcff7da0b7aba",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_egress_rule/73e6ba4cf80a91b71",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_egress_rule.app_https_out",
+          "type": "aws_vpc_security_group_egress_rule",
+          "id": "sgr-d9722c4fa29c323d6",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_egress_rule/688a87f164095be86",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_egress_rule.app_to_db",
+          "type": "aws_vpc_security_group_egress_rule",
+          "id": "sgr-a2109ba7c0daa535e",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_egress_rule/28853aa06a80b993b",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_ingress_rule.alb_http",
+          "type": "aws_vpc_security_group_ingress_rule",
+          "id": "sgr-93f99d4ddc8ff0387",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_ingress_rule/05e38c23d8cac6f6b",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_ingress_rule.alb_https",
+          "type": "aws_vpc_security_group_ingress_rule",
+          "id": "sgr-97cf63351b662ba6d",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_ingress_rule/08c7dd804b5f61120",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_ingress_rule.app_from_alb",
+          "type": "aws_vpc_security_group_ingress_rule",
+          "id": "sgr-e7e286ae963d6834d",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_ingress_rule/8aec73e5fc62f6a12",
+          "simulated": true
+        },
+        {
+          "address": "aws_vpc_security_group_ingress_rule.db_from_app",
+          "type": "aws_vpc_security_group_ingress_rule",
+          "id": "sgr-418211d4b6e32bb31",
+          "arn": "arn:aws:vpc:us-east-1:000000000000:sim/aws_vpc_security_group_ingress_rule/e2cf893f448f025cf",
+          "simulated": true
+        }
+      ],
+      "verification": [
+        {
+          "requirement": "REQ-SEC-001",
+          "check": "Database not publicly accessible",
+          "source": "simulated-state:aws_db_instance",
+          "outcome": "pass",
+          "detail": "publicly_accessible=False"
+        },
+        {
+          "requirement": "REQ-SEC-002",
+          "check": "Database storage encrypted",
+          "source": "simulated-state:aws_db_instance",
+          "outcome": "pass",
+          "detail": "storage_encrypted=True"
+        },
+        {
+          "requirement": "REQ-SEC-008",
+          "check": "Log bucket public access blocked",
+          "source": "simulated-state:aws_s3_bucket_public_access_block",
+          "outcome": "pass",
+          "detail": "all four settings true: True"
+        },
+        {
+          "requirement": "REQ-SEC-008",
+          "check": "Log bucket public access blocked",
+          "source": "simulated-state:aws_s3_bucket_public_access_block",
+          "outcome": "pass",
+          "detail": "all four settings true: True"
+        },
+        {
+          "requirement": "REQ-AUD-001",
+          "check": "CloudTrail logging",
+          "source": "simulated-state:aws_cloudtrail",
+          "outcome": "pass",
+          "detail": "enable_logging=True"
+        },
+        {
+          "requirement": "REQ-AVL-001",
+          "check": "Application health check",
+          "source": "simulation",
+          "outcome": "error",
+          "detail": "Not run: simulated resources have no endpoint to call."
+        }
+      ]
+    }
+  ],
+  "audit_log": [
+    {
+      "at": "2026-10-29T06:27:04.002473+00:00",
+      "action": "deployment.succeeded",
+      "detail": {
+        "deployment_id": "d0fd68cf1656468c96d5e610fe522a22",
+        "kind": "apply",
+        "mode": "simulation",
+        "resources": 72
+      }
+    },
+    {
+      "at": "2026-10-29T06:26:48.018315+00:00",
+      "action": "deployment.started",
+      "detail": {
+        "plan_id": "b83654a7919645b184624537622b9e39",
+        "kind": "apply",
+        "mode": "simulation"
+      }
+    },
+    {
+      "at": "2026-10-29T06:26:48.009080+00:00",
+      "action": "plan.approved",
+      "detail": {
+        "plan_id": "b83654a7919645b184624537622b9e39",
+        "kind": "apply",
+        "mode": "simulation",
+        "destructive": false,
+        "plan_sha256": "3fad6ceb73c5a0be006858178a21038dd53b2679de9ee50eac02c7a0ce5b8e62"
+      }
+    },
+    {
+      "at": "2026-10-29T06:26:37.196924+00:00",
+      "action": "pipeline.started",
+      "detail": {
+        "operation": "7a9b44032d5e4db88aacd594c51f775e"
+      }
+    },
+    {
+      "at": "2026-10-29T06:26:37.191078+00:00",
+      "action": "terraform.file_reverted",
+      "detail": {
+        "file": "security_groups.tf"
+      }
+    },
+    {
+      "at": "2026-10-29T06:26:37.184567+00:00",
+      "action": "terraform.file_reverted",
+      "detail": {
+        "file": "database.tf"
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.922932+00:00",
+      "action": "pipeline.started",
+      "detail": {
+        "operation": "331047dfe05b4f13b3271a52a9c08a2c"
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.917756+00:00",
+      "action": "terraform.insecure_test_change",
+      "detail": {
+        "scenario": "open_ssh",
+        "file": "security_groups.tf"
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.913976+00:00",
+      "action": "terraform.insecure_test_change",
+      "detail": {
+        "scenario": "public_database",
+        "file": "database.tf"
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.898474+00:00",
+      "action": "architecture.selected",
+      "detail": {
+        "option": "balanced",
+        "files": 15
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.243646+00:00",
+      "action": "requirements.compiled",
+      "detail": {
+        "revision": 1,
+        "count": 20
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.236758+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "budget",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.227422+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "alert_email",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.220693+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "alerting",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.214995+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "ops_team",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.209472+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "log_retention",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.203901+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "audit_logging",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.198207+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "admin_access",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.192193+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "tls",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.186658+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "recovery_window",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.181272+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "availability",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.175724+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "region",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.170084+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "data_residency",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.164533+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "compliance",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.158881+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "data_sensitivity",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.153514+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "file_uploads",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.148062+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "db_size",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.142705+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "needs_database",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.137396+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "traffic_pattern",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.131838+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "traffic",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.126391+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "app_runtime",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.121084+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "deployment_type",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.115975+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "environment",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.110627+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "user_geography",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.105071+00:00",
+      "action": "interview.answer",
+      "detail": {
+        "question": "industry",
+        "changed": true
+      }
+    },
+    {
+      "at": "2026-10-29T06:23:10.096984+00:00",
+      "action": "project.created",
+      "detail": {
+        "engine": "demo"
+      }
+    }
+  ],
+  "tooling": {
+    "terraform": true,
+    "checkov": true,
+    "trivy": true
+  },
+  "limitations": [
+    "No real AWS deployment has been performed for this project. Deployment results are SIMULATED and are not evidence of real infrastructure.",
+    "Policy checks are static analysis of the Terraform plan; they do not prove the running environment is secure.",
+    "Cost figures are approximate estimates from a static price table, not AWS billing data.",
+    "Checkov and Trivy findings are advisory and do not gate deployment.",
+    "References through Terraform locals or child modules are not resolved by the policy engine.",
+    "No requirement has been verified against a live AWS environment (highest verification level reached: static configuration analysis)."
+  ]
+}

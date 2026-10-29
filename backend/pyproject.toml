@@ -1,0 +1,25 @@
+[project]
+name = "iap-backend"
+version = "0.1.0"
+description = "Infrastructure as Prompt — API, requirements compiler, policy engine and Terraform pipeline"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE"]
+ignore = ["E501", "S101", "S603", "B008", "S105", "S106", "B023"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "BLE"]
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

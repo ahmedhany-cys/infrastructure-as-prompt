@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Brand: indigo. Reserved for actions, focus and "recommended". */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+
+  /* Ink: the dark chrome (top bar, hero, code). */
+  --color-ink-950: #060a14;
+  --color-ink-900: #0b1120;
+  --color-ink-800: #121a2e;
+  --color-ink-700: #1c2742;
+  --color-ink-600: #2a3756;
+
+  /* Signal: teal, used for "secure / verified" highlights. */
+  --color-signal-300: #5eead4;
+  --color-signal-400: #2dd4bf;
+  --color-signal-500: #14b8a6;
+  --color-signal-600: #0d9488;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-lift: 0 4px 6px -2px rgb(16 24 40 / 0.05), 0 12px 24px -6px rgb(16 24 40 / 0.12);
+
+  --animate-fade-up: fade-up 0.35s ease-out both;
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+html, body { background: #f5f6fa; color: #0f172a; }
+:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; }
+::selection { background: var(--color-brand-100); }
+
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(148 163 184 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(148 163 184 / 0.09) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+@utility bg-hero {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(99 102 241 / 0.35), transparent 60%),
+    radial-gradient(40rem 24rem at 0% 110%, rgb(20 184 166 / 0.18), transparent 60%),
+    var(--color-ink-950);
+}
+
+.hcl-comment { color: #64748b; font-style: italic; }
+.hcl-string { color: #0f766e; }
+.hcl-keyword { color: #7c3aed; font-weight: 500; }
+.hcl-number { color: #b45309; }
+.hcl-bool { color: #be123c; }
+.hcl-attr { color: #1d4ed8; }
+
+.react-flow__attribution { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .print-break { break-inside: avoid; }
+}

@@ -1,0 +1,128 @@
+# Internet-facing Application Load Balancer{{ " with AWS WAF" if p.waf else "" }}.
+# Implements {{ req.tls if req.tls else "HTTP-only listener (accepted for a public-data development environment)" }}{{ ", " + req.alb_logs if req.alb_logs else "" }}{{ ", " + req.waf if req.waf else "" }}.
+
+resource "aws_lb" "app" {
+  name                       = "${var.project_slug}-${substr(var.environment, 0, 4)}"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.alb.id]
+  subnets                    = aws_subnet.public[*].id
+  drop_invalid_header_fields = true
+  enable_deletion_protection = {{ "true" if p.deletion_protection else "false" }}
+{% if p.alb_access_logs %}
+
+  access_logs {
+    bucket  = aws_s3_bucket.logs.id
+    prefix  = "alb"
+    enabled = true
+  }
+
+  depends_on = [aws_s3_bucket_policy.logs]
+{% endif %}
+}
+
+resource "aws_lb_target_group" "app" {
+  name                 = "${var.project_slug}-${substr(var.environment, 0, 4)}-app"
+  port                 = {{ p.app_port }}
+  protocol             = "HTTP"
+  vpc_id               = aws_vpc.main.id
+  target_type          = "instance"
+  deregistration_delay = 30
+
+  health_check {
+    path                = "/health"
+    matcher             = "200"
+    interval            = 15
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+}
+{% if p.https %}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.acm_certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+}
+
+resource "aws_lb_listener" "http_redirect" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+{% else %}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+}
+{% endif %}
+{% if p.waf %}
+
+resource "aws_wafv2_web_acl" "main" {
+  name  = "${local.name_prefix}-web-acl"
+  scope = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+{% for rule in waf_rules %}
+  rule {
+    name     = "{{ rule }}"
+    priority = {{ loop.index }}
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "{{ rule }}"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "{{ rule }}"
+      sampled_requests_enabled   = true
+    }
+  }
+
+{% endfor %}
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "${local.name_prefix}-web-acl"
+    sampled_requests_enabled   = true
+  }
+}
+
+resource "aws_wafv2_web_acl_association" "main" {
+  resource_arn = aws_lb.app.arn
+  web_acl_arn  = aws_wafv2_web_acl.main.arn
+}
+{% endif %}

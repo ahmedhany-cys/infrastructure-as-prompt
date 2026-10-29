@@ -1,0 +1,519 @@
+{
+  "project_id": "20c173875dc448dc834465e380410cde",
+  "requirements_revision": 1,
+  "architecture_option": "balanced",
+  "requirements": [
+    {
+      "id": "REQ-SEC-001",
+      "title": "Database is not reachable from the internet",
+      "policies": [
+        "POL-RDS-001",
+        "POL-NET-001",
+        "POL-SG-002"
+      ],
+      "resources": [
+        "aws_db_instance.main",
+        "aws_db_subnet_group.main",
+        "aws_security_group.db",
+        "aws_vpc_security_group_ingress_rule.db_from_app"
+      ],
+      "decisions": [
+        "DEC-NET-TIERS",
+        "DEC-DB-PLACEMENT"
+      ]
+    },
+    {
+      "id": "REQ-SEC-002",
+      "title": "Data encrypted at rest",
+      "policies": [
+        "POL-RDS-002",
+        "POL-EC2-003",
+        "POL-S3-002"
+      ],
+      "resources": [
+        "aws_db_instance.main",
+        "aws_launch_template.app",
+        "aws_s3_bucket_server_side_encryption_configuration.logs"
+      ],
+      "decisions": [
+        "DEC-ENCRYPTION"
+      ]
+    },
+    {
+      "id": "REQ-SEC-003",
+      "title": "Data encrypted in transit",
+      "policies": [
+        "POL-ALB-001",
+        "POL-ALB-002",
+        "POL-RDS-006"
+      ],
+      "resources": [
+        "aws_lb_listener.https",
+        "aws_lb_listener.http_redirect",
+        "aws_db_parameter_group.main"
+      ],
+      "decisions": [
+        "DEC-TLS"
+      ]
+    },
+    {
+      "id": "REQ-SEC-004",
+      "title": "No administrative or database ports exposed to the internet",
+      "policies": [
+        "POL-SG-001",
+        "POL-SG-004"
+      ],
+      "resources": [
+        "aws_security_group.alb",
+        "aws_security_group.app",
+        "aws_default_security_group.default"
+      ],
+      "decisions": [
+        "DEC-ADMIN-ACCESS"
+      ]
+    },
+    {
+      "id": "REQ-NET-001",
+      "title": "Application servers reachable only through the load balancer",
+      "policies": [
+        "POL-SG-003"
+      ],
+      "resources": [
+        "aws_security_group.app",
+        "aws_vpc_security_group_ingress_rule.app_from_alb"
+      ],
+      "decisions": [
+        "DEC-NET-TIERS"
+      ]
+    },
+    {
+      "id": "REQ-SEC-005",
+      "title": "Least-privilege access for workloads",
+      "policies": [
+        "POL-IAM-001",
+        "POL-IAM-002",
+        "POL-IAM-003"
+      ],
+      "resources": [
+        "aws_iam_role.app",
+        "aws_iam_role_policy.app_read_db_secret",
+        "aws_iam_role_policy_attachment.app_ssm"
+      ],
+      "decisions": [
+        "DEC-IAM"
+      ]
+    },
+    {
+      "id": "REQ-SEC-006",
+      "title": "Secrets are never stored in configuration",
+      "policies": [
+        "POL-RDS-005",
+        "POL-SEC-002"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "decisions": [
+        "DEC-SECRETS"
+      ]
+    },
+    {
+      "id": "REQ-SEC-007",
+      "title": "Server metadata service hardened",
+      "policies": [
+        "POL-EC2-001"
+      ],
+      "resources": [
+        "aws_launch_template.app"
+      ],
+      "decisions": [
+        "DEC-IAM"
+      ]
+    },
+    {
+      "id": "REQ-SEC-008",
+      "title": "Log storage is private and tamper-resistant",
+      "policies": [
+        "POL-S3-001",
+        "POL-S3-002",
+        "POL-S3-003"
+      ],
+      "resources": [
+        "aws_s3_bucket.logs",
+        "aws_s3_bucket_public_access_block.logs",
+        "aws_s3_bucket_versioning.logs"
+      ],
+      "decisions": [
+        "DEC-LOGGING"
+      ]
+    },
+    {
+      "id": "REQ-AUD-001",
+      "title": "Audit trail of infrastructure changes",
+      "policies": [
+        "POL-LOG-001"
+      ],
+      "resources": [
+        "aws_cloudtrail.main"
+      ],
+      "decisions": [
+        "DEC-LOGGING"
+      ]
+    },
+    {
+      "id": "REQ-AUD-002",
+      "title": "Network and request logging",
+      "policies": [
+        "POL-LOG-002",
+        "POL-LOG-003"
+      ],
+      "resources": [
+        "aws_flow_log.vpc",
+        "aws_lb.app"
+      ],
+      "decisions": [
+        "DEC-LOGGING"
+      ]
+    },
+    {
+      "id": "REQ-AVL-001",
+      "title": "Application keeps running when a server fails",
+      "policies": [
+        "POL-AVL-001"
+      ],
+      "resources": [
+        "aws_autoscaling_group.app"
+      ],
+      "decisions": [
+        "DEC-COMPUTE"
+      ]
+    },
+    {
+      "id": "REQ-AVL-003",
+      "title": "Automated database backups retained \u2265 7 day(s)",
+      "policies": [
+        "POL-RDS-003"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "decisions": [
+        "DEC-DB-HA"
+      ]
+    },
+    {
+      "id": "REQ-OPS-001",
+      "title": "Production data protected from accidental deletion",
+      "policies": [
+        "POL-RDS-004"
+      ],
+      "resources": [
+        "aws_db_instance.main"
+      ],
+      "decisions": [
+        "DEC-DB-HA"
+      ]
+    },
+    {
+      "id": "REQ-PRF-001",
+      "title": "Capacity scales with traffic",
+      "policies": [
+        "POL-PRF-001"
+      ],
+      "resources": [
+        "aws_autoscaling_group.app",
+        "aws_autoscaling_policy.cpu_target"
+      ],
+      "decisions": [
+        "DEC-COMPUTE"
+      ]
+    },
+    {
+      "id": "REQ-CST-001",
+      "title": "Estimated monthly cost within $400",
+      "policies": [],
+      "resources": [],
+      "decisions": [
+        "DEC-COST"
+      ]
+    },
+    {
+      "id": "REQ-SEC-010",
+      "title": "Uploaded files are private and encrypted",
+      "policies": [
+        "POL-S3-001",
+        "POL-S3-002",
+        "POL-S3-003",
+        "POL-IAM-001"
+      ],
+      "resources": [
+        "aws_s3_bucket.uploads",
+        "aws_s3_bucket_public_access_block.uploads",
+        "aws_s3_bucket_server_side_encryption_configuration.uploads",
+        "aws_iam_role_policy.app_uploads"
+      ],
+      "decisions": [
+        "DEC-STORAGE"
+      ]
+    },
+    {
+      "id": "REQ-AUD-003",
+      "title": "Logs retained for at least 90 days",
+      "policies": [
+        "POL-LOG-004"
+      ],
+      "resources": [
+        "aws_s3_bucket_lifecycle_configuration.logs",
+        "aws_cloudwatch_log_group.postgresql"
+      ],
+      "decisions": [
+        "DEC-LOGGING"
+      ]
+    },
+    {
+      "id": "REQ-OPS-003",
+      "title": "Someone is alerted when the service is unhealthy",
+      "policies": [
+        "POL-OPS-001",
+        "POL-OPS-002"
+      ],
+      "resources": [
+        "aws_sns_topic.alerts",
+        "aws_sns_topic_subscription.email",
+        "aws_kms_key.alerts",
+        "aws_cloudwatch_metric_alarm.alb_5xx",
+        "aws_cloudwatch_metric_alarm.unhealthy_hosts",
+        "aws_cloudwatch_metric_alarm.db_cpu",
+        "aws_cloudwatch_metric_alarm.db_free_storage"
+      ],
+      "decisions": [
+        "DEC-MONITORING"
+      ]
+    },
+    {
+      "id": "REQ-OPS-002",
+      "title": "Resources are tagged for ownership and cost tracking",
+      "policies": [
+        "POL-TAG-001"
+      ],
+      "resources": [
+        "provider.aws"
+      ],
+      "decisions": [
+        "DEC-TAGS"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "users",
+      "label": "Customers",
+      "terraform": [],
+      "requirements": []
+    },
+    {
+      "id": "account",
+      "label": "AWS account",
+      "terraform": [
+        "provider.aws"
+      ],
+      "requirements": [
+        "REQ-OPS-002"
+      ]
+    },
+    {
+      "id": "region",
+      "label": "Region us-east-1",
+      "terraform": [],
+      "requirements": []
+    },
+    {
+      "id": "vpc",
+      "label": "VPC 10.20.0.0/16",
+      "terraform": [
+        "aws_vpc.main",
+        "aws_default_security_group.default"
+      ],
+      "requirements": []
+    },
+    {
+      "id": "public_subnets",
+      "label": "Public subnets (2 AZs)",
+      "terraform": [
+        "aws_subnet.public",
+        "aws_route_table.public",
+        "aws_internet_gateway.main"
+      ],
+      "requirements": []
+    },
+    {
+      "id": "app_subnets",
+      "label": "Private app subnets (2 AZs)",
+      "terraform": [
+        "aws_subnet.app",
+        "aws_route_table.app"
+      ],
+      "requirements": []
+    },
+    {
+      "id": "nat",
+      "label": "NAT gateway \u00d71",
+      "terraform": [
+        "aws_nat_gateway.main",
+        "aws_eip.nat"
+      ],
+      "requirements": []
+    },
+    {
+      "id": "data_subnets",
+      "label": "Isolated data subnets (2 AZs)",
+      "terraform": [
+        "aws_subnet.data",
+        "aws_route_table.data"
+      ],
+      "requirements": [
+        "REQ-SEC-001"
+      ]
+    },
+    {
+      "id": "alb",
+      "label": "Application Load Balancer",
+      "terraform": [
+        "aws_lb.app",
+        "aws_lb_target_group.app",
+        "aws_lb_listener.https",
+        "aws_security_group.alb"
+      ],
+      "requirements": [
+        "REQ-SEC-003",
+        "REQ-AUD-002"
+      ]
+    },
+    {
+      "id": "app",
+      "label": "App servers (auto scaling)",
+      "terraform": [
+        "aws_autoscaling_group.app",
+        "aws_launch_template.app",
+        "aws_autoscaling_policy.cpu_target",
+        "aws_security_group.app"
+      ],
+      "requirements": [
+        "REQ-NET-001",
+        "REQ-SEC-007",
+        "REQ-AVL-001",
+        "REQ-PRF-001",
+        "REQ-SEC-002"
+      ]
+    },
+    {
+      "id": "iam",
+      "label": "Instance role",
+      "terraform": [
+        "aws_iam_role.app",
+        "aws_iam_instance_profile.app",
+        "aws_iam_role_policy_attachment.app_ssm",
+        "aws_iam_role_policy.app_read_db_secret"
+      ],
+      "requirements": [
+        "REQ-SEC-005"
+      ]
+    },
+    {
+      "id": "ssm",
+      "label": "SSM Session Manager",
+      "terraform": [],
+      "requirements": [
+        "REQ-SEC-004"
+      ]
+    },
+    {
+      "id": "db",
+      "label": "RDS PostgreSQL 16",
+      "terraform": [
+        "aws_db_instance.main",
+        "aws_db_subnet_group.main",
+        "aws_db_parameter_group.main",
+        "aws_security_group.db"
+      ],
+      "requirements": [
+        "REQ-SEC-001",
+        "REQ-SEC-002",
+        "REQ-SEC-003",
+        "REQ-AVL-003",
+        "REQ-OPS-001"
+      ]
+    },
+    {
+      "id": "secrets",
+      "label": "Secrets Manager",
+      "terraform": [
+        "aws_db_instance.main"
+      ],
+      "requirements": [
+        "REQ-SEC-006"
+      ]
+    },
+    {
+      "id": "uploads",
+      "label": "Uploads bucket (S3)",
+      "terraform": [
+        "aws_s3_bucket.uploads",
+        "aws_s3_bucket_public_access_block.uploads",
+        "aws_s3_bucket_policy.uploads",
+        "aws_iam_role_policy.app_uploads"
+      ],
+      "requirements": [
+        "REQ-SEC-010"
+      ]
+    },
+    {
+      "id": "alerts",
+      "label": "Alerts (CloudWatch \u2192 email)",
+      "terraform": [
+        "aws_sns_topic.alerts",
+        "aws_sns_topic_subscription.email",
+        "aws_kms_key.alerts",
+        "aws_cloudwatch_metric_alarm.alb_5xx",
+        "aws_cloudwatch_metric_alarm.unhealthy_hosts",
+        "aws_cloudwatch_metric_alarm.db_cpu",
+        "aws_cloudwatch_metric_alarm.db_free_storage"
+      ],
+      "requirements": [
+        "REQ-OPS-003"
+      ]
+    },
+    {
+      "id": "logs",
+      "label": "Log bucket (S3)",
+      "terraform": [
+        "aws_s3_bucket.logs",
+        "aws_s3_bucket_public_access_block.logs",
+        "aws_s3_bucket_policy.logs"
+      ],
+      "requirements": [
+        "REQ-SEC-008"
+      ]
+    },
+    {
+      "id": "cloudtrail",
+      "label": "CloudTrail",
+      "terraform": [
+        "aws_cloudtrail.main"
+      ],
+      "requirements": [
+        "REQ-AUD-001"
+      ]
+    },
+    {
+      "id": "flowlogs",
+      "label": "VPC flow logs",
+      "terraform": [
+        "aws_flow_log.vpc"
+      ],
+      "requirements": [
+        "REQ-AUD-002"
+      ]
+    }
+  ]
+}

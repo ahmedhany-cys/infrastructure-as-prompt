@@ -1,0 +1,188 @@
+# Application tier: auto scaling group behind the load balancer.
+# Implements {{ req.imds }}, {{ req.least_privilege }}{{ ", " + req.app_avail if req.app_avail else "" }}{{ ", " + req.scaling if req.scaling else "" }}.
+
+resource "aws_iam_role" "app" {
+  name = "${local.name_prefix}-app"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+# Session Manager access replaces SSH keys and open administrative ports.
+resource "aws_iam_role_policy_attachment" "app_ssm" {
+  role       = aws_iam_role.app.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+{% if db %}
+
+# Least privilege: read only the RDS-managed secret for this database.
+resource "aws_iam_role_policy" "app_read_db_secret" {
+  name = "read-database-credentials"
+  role = aws_iam_role.app.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "ReadRdsManagedSecret"
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+      Resource = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:rds!db-*"
+      Condition = {
+        StringEquals = {
+          "secretsmanager:ResourceTag/aws:rds:primaryDBInstanceArn" = "arn:aws:rds:${var.aws_region}:${var.aws_account_id}:db:${local.db_identifier}"
+        }
+      }
+    }]
+  })
+}
+{% endif %}
+
+resource "aws_iam_instance_profile" "app" {
+  name = "${local.name_prefix}-app"
+  role = aws_iam_role.app.name
+}
+
+resource "aws_launch_template" "app" {
+  name_prefix   = "${local.name_prefix}-app-"
+  image_id      = "resolve:ssm:${var.app_ami_ssm_parameter}"
+  instance_type = var.instance_type
+
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.app.arn
+  }
+
+  network_interfaces {
+    associate_public_ip_address = {{ "false" if p.app_subnets_private else "true" }}
+    security_groups             = [aws_security_group.app.id]
+    delete_on_termination       = true
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size           = 16
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
+
+  monitoring {
+    enabled = true
+  }
+
+  # Placeholder application: replace with your own build/deploy process.
+  user_data = base64encode(<<-EOT
+    #!/bin/bash
+    set -euo pipefail
+    mkdir -p /opt/app
+    echo '{"status":"ok"}' > /opt/app/health
+    echo '<h1>Deployed by Infrastructure as Prompt</h1><p>Replace this placeholder with your application.</p>' > /opt/app/index.html
+    cat > /etc/systemd/system/placeholder-app.service <<'UNIT'
+    [Unit]
+    Description=Placeholder application
+    After=network-online.target
+    [Service]
+    ExecStart=/usr/bin/python3 -m http.server {{ p.app_port }} --directory /opt/app
+    DynamicUser=yes
+    Restart=always
+    [Install]
+    WantedBy=multi-user.target
+    UNIT
+    systemctl daemon-reload
+    systemctl enable --now placeholder-app
+  EOT
+  )
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "${local.name_prefix}-app"
+    }
+  }
+}
+
+resource "aws_autoscaling_group" "app" {
+  name_prefix               = "${local.name_prefix}-app-"
+  min_size                  = {{ p.asg_min }}
+  max_size                  = {{ p.asg_max }}
+  desired_capacity          = {{ p.asg_desired }}
+  vpc_zone_identifier       = aws_subnet.{{ "app" if p.app_subnets_private else "public" }}[*].id
+  target_group_arns         = [aws_lb_target_group.app.arn]
+  health_check_type         = "ELB"
+  health_check_grace_period = 120
+
+  launch_template {
+    id      = aws_launch_template.app.id
+    version = aws_launch_template.app.latest_version
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${local.name_prefix}-app"
+    propagate_at_launch = true
+  }
+{% if p.scheduled_scaling %}
+
+  # Capacity is changed by the business-hours schedules and target tracking.
+  lifecycle {
+    ignore_changes = [desired_capacity]
+  }
+{% endif %}
+}
+
+resource "aws_autoscaling_policy" "cpu_target" {
+  name                   = "cpu-target-tracking"
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  policy_type            = "TargetTrackingScaling"
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = {{ p.scale_out_cpu }}
+  }
+}
+{% if p.scheduled_scaling %}
+
+# Implements {{ req.schedule }}: servers run 07:00-19:00 on weekdays only.
+resource "aws_autoscaling_schedule" "business_hours_start" {
+  scheduled_action_name  = "business-hours-start"
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  recurrence             = "0 7 * * MON-FRI"
+  time_zone              = var.business_hours_timezone
+  min_size               = {{ p.asg_min }}
+  max_size               = {{ p.asg_max }}
+  desired_capacity       = {{ p.asg_desired }}
+}
+
+resource "aws_autoscaling_schedule" "business_hours_stop" {
+  scheduled_action_name  = "business-hours-stop"
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  recurrence             = "0 19 * * MON-FRI"
+  time_zone              = var.business_hours_timezone
+  min_size               = 0
+  max_size               = 0
+  desired_capacity       = 0
+}
+{% endif %}
