@@ -4,7 +4,26 @@
 
 ![Architecture workspace](docs/screenshots/04-architecture-diagram.png)
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ahmedhany-cys/infrastructure-as-prompt?quickstart=1)
+[![Try-it environments](https://github.com/ahmedhany-cys/infrastructure-as-prompt/actions/workflows/try-it.yml/badge.svg)](https://github.com/ahmedhany-cys/infrastructure-as-prompt/actions/workflows/try-it.yml)
+
 > **Status: working MVP.** AWS only. Runs in **simulation mode** by default: no cloud resources are created unless a server operator explicitly enables real deployments. No real AWS deployment has been performed with this codebase yet (see [Limitations](docs/limitations-and-roadmap.md)).
+
+## Try it
+
+**In your browser, nothing to install:** click **Open in GitHub Codespaces** above, then **Create codespace**. GitHub builds a private environment with Python, Node.js and Terraform, starts the app, and opens it in a new tab after a few minutes (the first start takes longest). Choose **Start with this example** and follow the interview. It runs on your own GitHub account's free Codespaces allowance; stop the codespace when you're done.
+
+**On your machine with Docker:**
+
+```bash
+git clone https://github.com/ahmedhany-cys/infrastructure-as-prompt.git
+cd infrastructure-as-prompt
+docker compose up --build
+```
+
+Then open http://localhost:3000 — `localhost` means your own computer, so this link works only while the containers are running. Both options run in **simulation mode**: no AWS account or credentials are needed, and no cloud resources are created.
+
+To run it without Docker, see [Quick start](#quick-start-local-simulation-mode).
 
 ## The problem
 

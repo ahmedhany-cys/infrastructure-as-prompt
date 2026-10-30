@@ -1,0 +1,40 @@
+# Checks that the two "try it" paths in the README actually start the app:
+# Docker Compose, and the dev container used by GitHub Codespaces.
+name: Try-it environments
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start
+        run: docker compose up --build --detach --wait --wait-timeout 300
+      - name: Smoke test
+        run: scripts/smoke-test.sh http://localhost:3000
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color --tail 200
+      - name: Stop
+        if: always()
+        run: docker compose down --volumes
+
+  devcontainer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the dev container, run its setup and start scripts, then smoke test
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: bash .devcontainer/start.sh && scripts/smoke-test.sh http://127.0.0.1:3000
