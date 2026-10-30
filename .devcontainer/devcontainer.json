@@ -1,20 +1,44 @@
 {
   "name": "Infrastructure as Prompt",
-  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
-    "ghcr.io/devcontainers/features/terraform:1": { "version": "1.17.0", "tflint": "none", "terragrunt": "none" }
+  "build": {
+    "dockerfile": "Dockerfile"
   },
-  "hostRequirements": { "cpus": 2, "memory": "8gb" },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb"
+  },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "postStartCommand": "bash .devcontainer/start.sh",
-  "forwardPorts": [3000],
+  "forwardPorts": [
+    3000
+  ],
   "portsAttributes": {
-    "3000": { "label": "Infrastructure as Prompt", "onAutoForward": "openBrowser" },
-    "8000": { "label": "API (internal)", "onAutoForward": "silent" }
+    "3000": {
+      "label": "Infrastructure as Prompt",
+      "onAutoForward": "openBrowser"
+    },
+    "8000": {
+      "label": "API (internal)",
+      "onAutoForward": "silent"
+    }
   },
   "customizations": {
-    "codespaces": { "openFiles": [".devcontainer/README.md"] },
-    "vscode": { "extensions": ["ms-python.python", "hashicorp.terraform", "dbaeumer.vscode-eslint"] }
+    "codespaces": {
+      "openFiles": [
+        ".devcontainer/README.md"
+      ]
+    },
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "hashicorp.terraform",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
   }
 }
