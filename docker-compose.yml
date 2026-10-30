@@ -1,0 +1,33 @@
+# One-command local run in simulation mode:  docker compose up --build
+# Then open http://localhost:3000. Only the frontend port is published; the
+# API is reached through the frontend's /api proxy.
+services:
+  backend:
+    build: ./backend
+    environment:
+      IAP_ENVIRONMENT: development
+      IAP_AI_PROVIDER: demo
+      IAP_ALLOW_REAL_DEPLOY: "false"
+      # Optional: set IAP_SECRET_KEY yourself; otherwise one is generated and kept in the volume.
+      IAP_SECRET_KEY: ${IAP_SECRET_KEY:-}
+    volumes:
+      - iap-data:/app/backend/var
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        IAP_BACKEND_URL: http://backend:8000
+    environment:
+      IAP_BACKEND_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  # SQLite database, Terraform workspaces and the AWS provider cache (~100 MB after the first validation).
+  iap-data:

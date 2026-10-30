@@ -33,6 +33,10 @@ Run the backend suite on its own: concurrent Terraform-heavy jobs on the same ma
 | Live Anthropic API call | **not performed** (no API key available) |
 | PostgreSQL | **not tested** (Alembic migration verified on SQLite) |
 
+## Try-it environments (CI)
+
+`.github/workflows/try-it.yml` builds and starts the Docker Compose stack and the Codespaces dev container on GitHub-hosted runners, then runs `scripts/smoke-test.sh` against each: landing page, `/api` proxy, session + CSRF, project creation, and the first tailored interview question with its detected hints.
+
 ## What the suites cover
 
 **Policy engine** (`tests/test_policy_engine.py`)

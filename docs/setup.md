@@ -1,5 +1,12 @@
 # Setup
 
+## Fastest options
+
+- **GitHub Codespaces** — the README's *Open in GitHub Codespaces* button uses `.devcontainer/`: a Python 3.12 image with Node.js 22 and Terraform 1.17.0 (installed by `.devcontainer/Dockerfile` and checked against HashiCorp's SHA-256 sums). `setup.sh` (on creation) installs dependencies, writes `backend/.env` with a random session key, and builds the frontend; `start.sh` (on every start) launches the API on port 8000 and the production web server on port 3000, which Codespaces forwards privately to your account. Logs: `/tmp/iap-backend.log`, `/tmp/iap-frontend.log`.
+- **Docker Compose** — `docker compose up --build`, then http://localhost:3000. The backend image installs Terraform from releases.hashicorp.com and checks it against HashiCorp's published SHA-256 sums; it runs as a non-root user, generates a session key on first start, and keeps the database, workspaces and provider cache in the `iap-data` volume. Only port 3000 is published; the API is reached through the frontend's `/api` proxy. Checkov and Trivy are not included in the images (their pipeline steps show as unavailable; they are advisory only).
+
+Both run in simulation mode with real deployment disabled. `scripts/smoke-test.sh <url>` checks a running instance, and the *Try-it environments* GitHub Actions workflow runs it against both setups on every push to `main` and every pull request.
+
 ## Requirements
 
 | Tool | Version tested | Required |
